@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "chitin",
+    "chitin-derive",
+    "examples",
+]

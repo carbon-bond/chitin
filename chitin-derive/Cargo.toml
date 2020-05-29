@@ -1,0 +1,13 @@
+[package]
+name = "chitin_derive"
+version = "0.1.0"
+authors = ["why8ther <lturtsamuel@gmail.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["visit"] }
+quote = "1.0"
+chitin_core = { path = "../chitin-core" }
