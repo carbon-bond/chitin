@@ -3,7 +3,7 @@ use chitin::*;
 #[derive(ChitinCodegen)]
 pub enum UserDetailQuery {
     #[chitin(request, response = "Result<String, String>")]
-    AskUserDetail { user_id: i32 }
+    AskUserDetail { user_id: i32 },
 }
 
 #[derive(ChitinCodegen)]

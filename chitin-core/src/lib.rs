@@ -1,6 +1,6 @@
+use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use inflector::Inflector;
 
 #[derive(Clone, Debug)]
 pub struct CodegenOption {}
@@ -23,13 +23,21 @@ impl ToTokens for Request {
     }
 }
 
-fn gen_arg_string(requests: &[Request]) -> String {
+fn gen_arg_string(requests: &[Request], with_type: bool) -> String {
     if requests.len() == 0 {
         "".to_owned()
     } else {
-        let mut args = format!("{}: {}", requests[0].name, requests[0].ty);
+        let mut args = if with_type {
+            format!("{}: {}", requests[0].name, requests[0].ty)
+        } else {
+            format!("{}", requests[0].name)
+        };
         for req in &requests[1..] {
-            args.push_str(&format!(", {}: {}", req.name, req.ty));
+            if with_type {
+                args.push_str(&format!(", {}: {}", req.name, req.ty));
+            } else {
+                args.push_str(&format!(", {}", req.name));
+            }
         }
         args
     }
@@ -127,11 +135,14 @@ pub trait ChitinCodegen {
         }
 
         code.push_str(&format!(
-            "#[async trait]\ntrait {} {{\n",
+            "#[async_trait]\ntrait {} {{\n",
             get_router_name(&Self::get_name())
         ));
         for router_name in routers_name.iter() {
-            code.push_str(&format!("    type {};\n", router_name));
+            code.push_str(&format!(
+                "    type {}: {} + Sync;\n",
+                router_name, router_name
+            ));
         }
         for entry in entries.iter() {
             match entry {
@@ -143,7 +154,7 @@ pub trait ChitinCodegen {
                     code.push_str(&format!(
                         "    async fn {}(&self, {}) -> {};\n",
                         get_handler_name(name, false),
-                        gen_arg_string(request),
+                        gen_arg_string(request, true),
                         response_ty
                     ));
                 }
@@ -151,9 +162,8 @@ pub trait ChitinCodegen {
                     name, query_name, ..
                 } => {
                     code.push_str(&format!(
-                        "    fn {}(&self, query: {}) -> Self::{};\n",
+                        "    fn {}(&self) -> &Self::{};\n",
                         get_handler_name(name, true),
-                        query_name,
                         get_router_name(query_name)
                     ));
                 }
@@ -171,17 +181,16 @@ pub trait ChitinCodegen {
                         "             {}::{} {{ {} }} => {{\n",
                         Self::get_name(),
                         name,
-                        gen_arg_string(request)
+                        gen_arg_string(request, false)
                     ));
                     code.push_str(&format!(
-                        "                 let resp = self.{}().await;\n",
-                        get_handler_name(name, false)
+                        "                 let resp = self.{}({}).await;\n",
+                        get_handler_name(name, false),
+                        gen_arg_string(request, false)
                     ));
                     code.push_str(&format!("                 serde_json::to_string(&resp)\n",));
                 }
-                Entry::Node {
-                    name, query_name, ..
-                } => {
+                Entry::Node { name, .. } => {
                     code.push_str(&format!(
                         "             {}::{}(query) => {{\n",
                         Self::get_name(),
