@@ -1,5 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
+use inflector::Inflector;
 
 #[derive(Clone, Debug)]
 pub struct CodegenOption {}
@@ -141,7 +142,7 @@ pub trait ChitinCodegen {
                 } => {
                     code.push_str(&format!(
                         "    async fn {}(&self, {}) -> {};\n",
-                        get_handler_name(name),
+                        get_handler_name(name, false),
                         gen_arg_string(request),
                         response_ty
                     ));
@@ -151,7 +152,7 @@ pub trait ChitinCodegen {
                 } => {
                     code.push_str(&format!(
                         "    fn {}(&self, query: {}) -> Self::{};\n",
-                        get_handler_name(name),
+                        get_handler_name(name, true),
                         query_name,
                         get_router_name(query_name)
                     ));
@@ -174,7 +175,7 @@ pub trait ChitinCodegen {
                     ));
                     code.push_str(&format!(
                         "                 let resp = self.{}().await;\n",
-                        get_handler_name(name)
+                        get_handler_name(name, false)
                     ));
                     code.push_str(&format!("                 serde_json::to_string(&resp)\n",));
                 }
@@ -188,7 +189,7 @@ pub trait ChitinCodegen {
                     ));
                     code.push_str(&format!(
                         "                 self.{}().handle(query).await\n",
-                        get_handler_name(name)
+                        get_handler_name(name, true)
                     ));
                 }
             }
@@ -205,6 +206,10 @@ pub fn get_router_name(query_name: &str) -> String {
     format!("{}Router", query_name)
 }
 
-pub fn get_handler_name(name: &str) -> String {
-    format!("{}", name)
+pub fn get_handler_name(name: &str, is_router: bool) -> String {
+    if is_router {
+        format!("{}_router", name.to_snake_case())
+    } else {
+        name.to_snake_case()
+    }
 }
