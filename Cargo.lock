@@ -11,6 +11,10 @@ dependencies = [
 [[package]]
 name = "chitin_core"
 version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+]
 
 [[package]]
 name = "chitin_derive"
