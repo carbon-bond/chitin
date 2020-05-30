@@ -116,12 +116,12 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
 
     let entries = entries.iter();
     let ident = ast.ident;
-    let router_name = get_router_name(&ident.to_string());
+    let name = ident.to_string();
     let expanded = quote! {
         #[automatically_derived]
         impl ChitinCodegen for #ident {
-            fn get_router_name() -> &'static str {
-                #router_name
+            fn get_name() -> &'static str {
+                #name
             }
             fn get_entries() -> Vec<Entry> {
                 vec![#(#entries),*]

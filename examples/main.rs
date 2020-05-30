@@ -12,5 +12,5 @@ fn main() {
     // println!("{}", UserQuery::get_router_name());
     // println!("{:?}", UserQuery::get_entries());
 
-    println!("{}", RootQuery::codegen(&CodegenOption{}));
+    println!("{}", RootQuery::codegen(&CodegenOption {}));
 }

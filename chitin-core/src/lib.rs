@@ -22,6 +22,18 @@ impl ToTokens for Request {
     }
 }
 
+fn gen_arg_string(requests: &[Request]) -> String {
+    if requests.len() == 0 {
+        "".to_owned()
+    } else {
+        let mut args = format!("{}: {}", requests[0].name, requests[0].ty);
+        for req in &requests[1..] {
+            args.push_str(&format!(", {}: {}", req.name, req.ty));
+        }
+        args
+    }
+}
+
 pub enum FuncOrCode {
     Func(fn(&CodegenOption) -> String),
     Code(TokenStream),
@@ -93,7 +105,7 @@ impl ToTokens for Entry {
 }
 
 pub trait ChitinCodegen {
-    fn get_router_name() -> &'static str;
+    fn get_name() -> &'static str;
     fn get_entries() -> Vec<Entry>;
     fn codegen(opt: &CodegenOption) -> String {
         let entries = Self::get_entries();
@@ -115,7 +127,7 @@ pub trait ChitinCodegen {
 
         code.push_str(&format!(
             "#[async trait]\ntrait {} {{\n",
-            Self::get_router_name()
+            get_router_name(&Self::get_name())
         ));
         for router_name in routers_name.iter() {
             code.push_str(&format!("    type {};\n", router_name));
@@ -127,14 +139,10 @@ pub trait ChitinCodegen {
                     response_ty,
                     request,
                 } => {
-                    let mut args_string = "".to_owned();
-                    for req in request.iter() {
-                        args_string.push_str(&format!("{}: {}, ", req.name, req.ty));
-                    }
                     code.push_str(&format!(
-                        "    async fn {}({}) -> {};\n",
+                        "    async fn {}(&self, {}) -> {};\n",
                         get_handler_name(name),
-                        args_string,
+                        gen_arg_string(request),
                         response_ty
                     ));
                 }
@@ -142,7 +150,7 @@ pub trait ChitinCodegen {
                     name, query_name, ..
                 } => {
                     code.push_str(&format!(
-                        "    fn {}(query: {}) -> Self::{};\n",
+                        "    fn {}(&self, query: {}) -> Self::{};\n",
                         get_handler_name(name),
                         query_name,
                         get_router_name(query_name)
@@ -150,6 +158,44 @@ pub trait ChitinCodegen {
                 }
             }
         }
+        code.push_str(&format!(
+            "    async fn handle(&self, query: {}) -> Result<String, Error> {{\n",
+            Self::get_name()
+        ));
+        code.push_str("        match query {\n");
+        for entry in entries.iter() {
+            match entry {
+                Entry::Leaf { name, request, .. } => {
+                    code.push_str(&format!(
+                        "             {}::{} {{ {} }} => {{\n",
+                        Self::get_name(),
+                        name,
+                        gen_arg_string(request)
+                    ));
+                    code.push_str(&format!(
+                        "                 let resp = self.{}().await;\n",
+                        get_handler_name(name)
+                    ));
+                    code.push_str(&format!("                 serde_json::to_string(&resp)\n",));
+                }
+                Entry::Node {
+                    name, query_name, ..
+                } => {
+                    code.push_str(&format!(
+                        "             {}::{}(query) => {{\n",
+                        Self::get_name(),
+                        name
+                    ));
+                    code.push_str(&format!(
+                        "                 self.{}().handle(query).await\n",
+                        get_handler_name(name)
+                    ));
+                }
+            }
+            code.push_str("             }\n");
+        }
+        code.push_str("        }\n");
+        code.push_str("    }\n");
         code.push_str("}\n");
         code
     }
@@ -160,5 +206,5 @@ pub fn get_router_name(query_name: &str) -> String {
 }
 
 pub fn get_handler_name(name: &str) -> String {
-    format!("handle_{}", name)
+    format!("{}", name)
 }

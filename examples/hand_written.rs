@@ -35,8 +35,7 @@ pub trait RootQueryRouter {
             }
             RootQuery::User(query) => {
                 self.user_router().handle_query(query).await
-            },
-            _ => panic!(),
+            }
         }
     }
 }
