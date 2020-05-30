@@ -61,7 +61,7 @@ impl ToTokens for Entry {
     }
 }
 
-pub trait ChitinRouter {
+pub trait ChitinCodegen {
     fn get_router_name() -> &'static str;
     fn get_entries() -> Vec<Entry>;
     fn gen_server_code() -> String {

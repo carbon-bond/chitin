@@ -49,7 +49,7 @@ impl EntryType {
     }
 }
 
-#[proc_macro_derive(ChitinRouter, attributes(chitin))]
+#[proc_macro_derive(ChitinCodegen, attributes(chitin))]
 pub fn derive_router(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
     let ident = ast.ident;
@@ -119,12 +119,12 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
             entries.push(entry);
         }
     } else {
-        panic!("只有枚舉類型可以實作 ChitinRouter")
+        panic!("只有枚舉類型可以實作 ChitinCodegen")
     };
     let entries = entries.iter();
     let expanded = quote! {
         #[automatically_derived]
-        impl ChitinRouter for #ident {
+        impl ChitinCodegen for #ident {
             fn get_router_name() -> &'static str {
                 #router_name
             }
