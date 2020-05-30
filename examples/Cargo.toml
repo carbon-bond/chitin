@@ -11,3 +11,6 @@ path = "main.rs"
 
 [dependencies]
 chitin = { path = "../chitin" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+async-trait = "0.1.31"

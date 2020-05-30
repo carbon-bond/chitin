@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Request {
     pub ty: String,
     pub name: String,
@@ -19,7 +19,7 @@ impl ToTokens for Request {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Entry {
     Leaf {
         name: String,
@@ -28,15 +28,20 @@ pub enum Entry {
     },
     Node {
         name: String,
-        enum_name: String,
+        query_name: String,
     },
 }
 
 impl ToTokens for Entry {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Entry::Node { .. } => {
-                unimplemented!();
+            Entry::Node { name, query_name } => {
+                tokens.extend(quote! {
+                    Entry::Node {
+                        name: #name.to_owned(),
+                        query_name: #query_name.to_owned(),
+                    }
+                });
             }
             Entry::Leaf {
                 name,
@@ -59,4 +64,7 @@ impl ToTokens for Entry {
 pub trait ChitinRouter {
     fn get_router_name() -> &'static str;
     fn get_entries() -> Vec<Entry>;
+    fn gen_server_code() -> String {
+        unimplemented!();
+    }
 }
