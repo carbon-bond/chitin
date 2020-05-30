@@ -1,16 +1,12 @@
 extern crate proc_macro;
 
-use chitin_core::{Entry, FuncOrCode, Request};
+use chitin_core::{get_router_name, Entry, FuncOrCode, Request};
 use proc_macro::TokenStream;
-use quote::quote;
 use proc_macro2::TokenStream as TokenStream2;
+use quote::quote;
 use std::collections::HashMap;
-use syn::{parse_macro_input, Data, DeriveInput, Lit, Meta, NestedMeta, Type};
 use std::str::FromStr;
-
-fn get_router_name(query_name: &str) -> String {
-    format!("{}Router", query_name)
-}
+use syn::{parse_macro_input, Data, DeriveInput, Lit, Meta, NestedMeta, Type};
 
 #[derive(Default)]
 struct Args {
@@ -52,9 +48,7 @@ impl EntryType {
                 Entry::Node {
                     name: name.to_owned(),
                     codegen: FuncOrCode::Code(quote! {
-                        |opt| {
-                            #query_ident::codegen(opt)
-                        }
+                        #query_ident::codegen
                     }),
                     query_name,
                 }
