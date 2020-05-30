@@ -1,7 +1,7 @@
 use chitin::{ChitinCodegen, CodegenOption};
 
 mod query;
-use query::{RootQuery, UserQuery};
+use query::RootQuery;
 
 // mod hand_written;
 
@@ -12,5 +12,8 @@ fn main() {
     // println!("{}", UserQuery::get_router_name());
     // println!("{:?}", UserQuery::get_entries());
 
+    println!("use async_trait::async_trait;");
+    println!("use crate::query::*;");
+    println!("use serde_json::error::Error;");
     println!("{}", RootQuery::codegen(&CodegenOption {}));
 }

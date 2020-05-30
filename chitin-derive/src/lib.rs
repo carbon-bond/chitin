@@ -1,6 +1,6 @@
 extern crate proc_macro;
 
-use chitin_core::{get_router_name, Entry, FuncOrCode, Request};
+use chitin_core::{Entry, FuncOrCode, Request};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
@@ -21,7 +21,7 @@ enum EntryType {
 }
 
 impl EntryType {
-    fn from_str(name: &str, s: &str) -> Self {
+    fn from_str(s: &str) -> Self {
         match s {
             "request" => Self::Leaf,
             "router" => Self::Node,
@@ -87,10 +87,7 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
                             }
                         }
                         NestedMeta::Meta(Meta::Path(p)) => {
-                            entry_type = EntryType::from_str(
-                                &entry_name,
-                                &p.get_ident().unwrap().to_string(),
-                            );
+                            entry_type = EntryType::from_str(&p.get_ident().unwrap().to_string());
                         }
                         _ => panic!(),
                     }
