@@ -1,6 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
+#[derive(Clone, Debug)]
+pub struct CodegenOption {}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Request {
     pub ty: String,
@@ -19,7 +22,25 @@ impl ToTokens for Request {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FuncOrCode {
+    Func(Box<dyn Fn(&CodegenOption) -> String>),
+    Code(TokenStream),
+}
+impl std::fmt::Debug for FuncOrCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            FuncOrCode::Code(code) => {
+                write!(f, "Code({})", code.to_string());
+            }
+            FuncOrCode::Func(_) => {
+                write!(f, "Function");
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
 pub enum Entry {
     Leaf {
         name: String,
@@ -29,19 +50,29 @@ pub enum Entry {
     Node {
         name: String,
         query_name: String,
+        codegen: FuncOrCode,
     },
 }
 
 impl ToTokens for Entry {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Entry::Node { name, query_name } => {
-                tokens.extend(quote! {
-                    Entry::Node {
-                        name: #name.to_owned(),
-                        query_name: #query_name.to_owned(),
-                    }
-                });
+            Entry::Node {
+                name,
+                query_name,
+                codegen,
+            } => {
+                if let FuncOrCode::Code(code) = codegen {
+                    tokens.extend(quote! {
+                        Entry::Node {
+                            name: #name.to_owned(),
+                            query_name: #query_name.to_owned(),
+                            codegen: FuncOrCode::Func(Box::new(#code))
+                        }
+                    });
+                } else {
+                    panic!("內部實作錯誤")
+                }
             }
             Entry::Leaf {
                 name,
@@ -64,7 +95,8 @@ impl ToTokens for Entry {
 pub trait ChitinCodegen {
     fn get_router_name() -> &'static str;
     fn get_entries() -> Vec<Entry>;
-    fn gen_server_code() -> String {
+    fn codegen(opt: &CodegenOption) -> String {
+        let entries = Self::get_entries();
         unimplemented!();
     }
 }

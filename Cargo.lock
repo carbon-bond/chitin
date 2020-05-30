@@ -32,6 +32,7 @@ name = "chitin_derive"
 version = "0.1.0"
 dependencies = [
  "chitin_core",
+ "proc-macro2",
  "quote",
  "syn",
 ]

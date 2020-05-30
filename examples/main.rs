@@ -1,9 +1,9 @@
 use chitin::ChitinCodegen;
 
 mod query;
-use query::{UserQuery, RootQuery};
+use query::{RootQuery, UserQuery};
 
-mod hand_written;
+// mod hand_written;
 
 fn main() {
     println!("{}", RootQuery::get_router_name());

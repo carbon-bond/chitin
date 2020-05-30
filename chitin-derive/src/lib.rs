@@ -1,15 +1,21 @@
 extern crate proc_macro;
 
-use chitin_core::{Entry, Request};
+use chitin_core::{Entry, FuncOrCode, Request};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Lit, Meta, NestedMeta, Type};
+use proc_macro2::TokenStream as TokenStream2;
 use std::collections::HashMap;
+use syn::{parse_macro_input, Data, DeriveInput, Lit, Meta, NestedMeta, Type};
+use std::str::FromStr;
+
+fn get_router_name(query_name: &str) -> String {
+    format!("{}Router", query_name)
+}
 
 #[derive(Default)]
 struct Args {
     named: HashMap<String, String>,
-    unnamed: Vec<String>
+    unnamed: Vec<String>,
 }
 
 enum EntryType {
@@ -33,18 +39,27 @@ impl EntryType {
                 Entry::Leaf {
                     name: name.to_owned(),
                     response_ty: response.to_owned(),
-                    request: args.named.into_iter().map(|(name, ty)| {
-                        Request { name, ty }
-                    }).collect()
+                    request: args
+                        .named
+                        .into_iter()
+                        .map(|(name, ty)| Request { name, ty })
+                        .collect(),
                 }
-            },
+            }
             EntryType::Node => {
+                let query_name = args.unnamed.pop().expect("router 項目必須單有一個參數");
+                let query_ident = TokenStream2::from_str(&query_name).unwrap();
                 Entry::Node {
                     name: name.to_owned(),
-                    query_name: args.unnamed.pop().expect("router 項目必須單有一個參數")
+                    codegen: FuncOrCode::Code(quote! {
+                        |opt| {
+                            #query_ident::codegen(opt)
+                        }
+                    }),
+                    query_name,
                 }
-            },
-            _ => panic!("未指定項目的類型！")
+            }
+            _ => panic!("未指定項目的類型！"),
         }
     }
 }
@@ -52,8 +67,6 @@ impl EntryType {
 #[proc_macro_derive(ChitinCodegen, attributes(chitin))]
 pub fn derive_router(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
-    let ident = ast.ident;
-    let router_name = format!("{}Router", ident);
     let mut entries = Vec::<Entry>::new();
     if let Data::Enum(data_enum) = ast.data {
         for variant in data_enum.variants.iter() {
@@ -101,27 +114,15 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
                 }
             }
             let entry = entry_type.gen_entry(&entry_name, &map, args);
-            // }
-            // if let Some(Entry::Node {
-            //     ref mut enum_name, ..
-            // }) = entry
-            // {
-            //     for field in variant.fields.iter() {
-            //         if enum_name.is_some() {
-            //             panic!("router 項目只能有一個參數（即 query 枚舉）");
-            //         }
-            //         if let Type::Path(p) = &field.ty {
-            //             let ty = p.path.get_ident().unwrap().to_string();
-            //             *enum_name = Some(ty);
-            //         }
-            //     }
-            // }
             entries.push(entry);
         }
     } else {
         panic!("只有枚舉類型可以實作 ChitinCodegen")
     };
+
     let entries = entries.iter();
+    let ident = ast.ident;
+    let router_name = get_router_name(&ident.to_string());
     let expanded = quote! {
         #[automatically_derived]
         impl ChitinCodegen for #ident {
