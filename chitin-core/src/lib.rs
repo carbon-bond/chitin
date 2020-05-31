@@ -3,7 +3,9 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
 #[derive(Clone, Debug)]
-pub struct CodegenOption {}
+pub struct CodegenOption {
+    pub is_server: bool,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Request {
@@ -117,6 +119,16 @@ pub trait ChitinCodegen {
     fn get_name() -> &'static str;
     fn get_entries() -> Vec<Entry>;
     fn codegen(opt: &CodegenOption) -> String {
+        if opt.is_server {
+            Self::server_codegen(opt)
+        } else {
+            Self::client_codegen(opt)
+        }
+    }
+    fn client_codegen(opt: &CodegenOption) -> String {
+        "".to_owned()
+    }
+    fn server_codegen(opt: &CodegenOption) -> String {
         let entries = Self::get_entries();
         let mut routers_name = vec![];
         let mut code = "".to_owned();

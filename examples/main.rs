@@ -15,5 +15,5 @@ fn main() {
     println!("use async_trait::async_trait;");
     println!("use crate::query::*;");
     println!("use serde_json::error::Error;");
-    println!("{}", RootQuery::codegen(&CodegenOption {}));
+    println!("{}", RootQuery::codegen(&CodegenOption { is_server: true }));
 }

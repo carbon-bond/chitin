@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 use serde_json::error::Error;
-use crate::query::{RootQuery, UserQuery};
+use crate::query::*;
 
 #[async_trait]
 pub trait UserRouter {
