@@ -3,7 +3,7 @@ extern crate proc_macro;
 use chitin_core::{Entry, FuncOrCode, Request};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
+use quote::{quote, ToTokens};
 use std::collections::HashMap;
 use std::str::FromStr;
 use syn::{parse_macro_input, Data, DeriveInput, Lit, Meta, NestedMeta, Type};
@@ -95,7 +95,11 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
             }
             for field in variant.fields.iter() {
                 if let Type::Path(p) = &field.ty {
-                    let ty = p.path.get_ident().unwrap().to_string();
+                    let ty = if let Some(ident) = p.path.get_ident(){
+                        ident.to_string()
+                    } else {
+                        p.path.to_token_stream().to_string().replace(" ", "")
+                    };
                     if let Some(name) = field.ident.as_ref() {
                         let name = name.to_string();
                         args.named.insert(name, ty);

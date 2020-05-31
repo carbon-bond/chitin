@@ -3,7 +3,7 @@ use chitin::{ChitinCodegen, CodegenOption};
 mod query;
 use query::RootQuery;
 
-// mod hand_written;
+mod model;
 
 fn main() {
     // println!("{}", RootQuery::get_router_name());

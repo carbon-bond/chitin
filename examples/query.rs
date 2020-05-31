@@ -4,7 +4,7 @@ use chitin::*;
 
 #[derive(ChitinCodegen)]
 pub enum UserDetailQuery {
-    #[chitin(request, response = "Result<String, String>")]
+    #[chitin(request, response = "Result<crate::model::User, String>")]
     AskUserDetail { user_id: i32 },
 }
 
@@ -12,7 +12,7 @@ pub enum UserDetailQuery {
 pub enum UserQuery {
     #[chitin(request, response = "Result<Vec<String>, String>")]
     AskUserArticles { user_id: i32, count: usize },
-    #[chitin(request, response = "Result<Vec<String>, String>")]
+    #[chitin(request, response = "Result<Vec<crate::model::User>, String>")]
     AskUserFriends { user_id: i32 },
     #[chitin(router)]
     UserDetail(UserDetailQuery),
@@ -30,6 +30,8 @@ pub enum PartyQuery {
 pub enum RootQuery {
     #[chitin(request, response = "Result<Vec<String>, String>")]
     AskArticles { board_id: i32, count: usize },
+    #[chitin(request, response = "Result<(), String>")]
+    PostArticle { board_id: i32, article: crate::model::Article },
     #[chitin(request, response = "String")]
     AskBoard { board_id: i32 },
     #[chitin(router)]
