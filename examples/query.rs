@@ -31,7 +31,10 @@ pub enum RootQuery {
     #[chitin(request, response = "Result<Vec<String>, String>")]
     AskArticles { board_id: i32, count: usize },
     #[chitin(request, response = "Result<(), String>")]
-    PostArticle { board_id: i32, article: crate::model::Article },
+    PostArticle {
+        board_id: i32,
+        article: crate::model::Article,
+    },
     #[chitin(request, response = "String")]
     AskBoard { board_id: i32 },
     #[chitin(router)]

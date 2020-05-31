@@ -2,6 +2,7 @@
 
 members = [
     "chitin",
+    "chitin-core",
     "chitin-derive",
     "examples",
 ]

@@ -1,7 +1,5 @@
 mod query;
-use query::*;
-mod model;
 mod api_trait;
+mod model;
 
-fn main() {
-}
+fn main() {}

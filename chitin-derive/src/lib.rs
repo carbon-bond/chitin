@@ -95,7 +95,7 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
             }
             for field in variant.fields.iter() {
                 if let Type::Path(p) = &field.ty {
-                    let ty = if let Some(ident) = p.path.get_ident(){
+                    let ty = if let Some(ident) = p.path.get_ident() {
                         ident.to_string()
                     } else {
                         p.path.to_token_stream().to_string().replace(" ", "")

@@ -1,10 +1,20 @@
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
+use regex::Regex;
 
 #[derive(Clone, Debug)]
-pub struct CodegenOption {
-    pub is_server: bool,
+pub enum CodegenOption {
+    Server,
+    Client { is_root: bool },
+}
+impl CodegenOption {
+    pub fn is_server(&self) -> bool {
+        match self {
+            Self::Server => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,7 +35,18 @@ impl ToTokens for Request {
     }
 }
 
-fn gen_arg_string(requests: &[Request], with_type: bool) -> String {
+fn to_typescript_type(path: &str) -> String {
+    let re = Regex::new(r"\w*::").unwrap();
+    let result = re.replace_all(path, "");
+    let re = Regex::new(r"Vec").unwrap();
+    let result = re.replace_all(result.as_ref(), "Array");
+    let re = Regex::new(r"\(\)").unwrap();
+    let result = re.replace_all(result.as_ref(), "void");
+    // TODO: 其它基礎型別的轉換
+    result.to_owned().to_string()
+}
+
+fn gen_arg_string(requests: &[Request], with_type: bool, opt: &CodegenOption) -> String {
     if requests.len() == 0 {
         "".to_owned()
     } else {
@@ -36,7 +57,12 @@ fn gen_arg_string(requests: &[Request], with_type: bool) -> String {
         };
         for req in &requests[1..] {
             if with_type {
-                args.push_str(&format!(", {}: {}", req.name, req.ty));
+                let ty = if opt.is_server() {
+                    req.ty.clone()
+                } else {
+                    to_typescript_type(&req.ty)
+                };
+                args.push_str(&format!(", {}: {}", req.name, ty));
             } else {
                 args.push_str(&format!(", {}", req.name));
             }
@@ -60,6 +86,14 @@ impl std::fmt::Debug for FuncOrCode {
             }
         }
         Ok(())
+    }
+}
+impl FuncOrCode {
+    fn gen_string(&self, opt: &CodegenOption) -> String {
+        match self {
+            FuncOrCode::Func(f) => f(opt),
+            _ => panic!(),
+        }
     }
 }
 
@@ -119,14 +153,55 @@ pub trait ChitinCodegen {
     fn get_name() -> &'static str;
     fn get_entries() -> Vec<Entry>;
     fn codegen(opt: &CodegenOption) -> String {
-        if opt.is_server {
+        if opt.is_server() {
             Self::server_codegen(opt)
         } else {
             Self::client_codegen(opt)
         }
     }
     fn client_codegen(opt: &CodegenOption) -> String {
-        "".to_owned()
+        let (is_root, leaf_opt) = {
+            let mut t = opt.clone();
+            if let CodegenOption::Client { ref mut is_root } = t {
+                if *is_root {
+                    *is_root = false;
+                    (true, t)
+                } else {
+                    (false, t)
+                }
+            } else {
+                panic!()
+            }
+        };
+        let mut code = "".to_owned();
+        if is_root {
+            code.push_str(&format!("abstract class {}Fetcher {{\n", Self::get_name()));
+            code.push_str("    abstract fetchResult(query: String): Promise<String>;\n");
+        }
+        for entry in Self::get_entries().iter() {
+            match entry {
+                Entry::Leaf {
+                    name,
+                    response_ty,
+                    request,
+                } => {
+                    code.push_str(&format!(
+                        "    async {}({}): Promise<{}> {{\n",
+                        get_query_func_name(name),
+                        gen_arg_string(request, true, opt),
+                        to_typescript_type(response_ty)
+                    ));
+                    // TODO: fetchResult 的參數要怎麼塞？
+                    code.push_str("        return JSON.parse(await this.fetchResult());\n");
+                    code.push_str("    }\n");
+                }
+                Entry::Node { codegen, .. } => code.push_str(&codegen.gen_string(&leaf_opt)),
+            }
+        }
+        if is_root {
+            code.push_str("}\n");
+        }
+        code
     }
     fn server_codegen(opt: &CodegenOption) -> String {
         let entries = Self::get_entries();
@@ -140,9 +215,7 @@ pub trait ChitinCodegen {
             } = entry
             {
                 routers_name.push(get_router_name(query_name));
-                if let FuncOrCode::Func(f) = codegen {
-                    code.push_str(&f(opt));
-                }
+                code.push_str(&codegen.gen_string(opt));
             }
         }
 
@@ -166,7 +239,7 @@ pub trait ChitinCodegen {
                     code.push_str(&format!(
                         "    async fn {}(&self, {}) -> {};\n",
                         get_handler_name(name, false),
-                        gen_arg_string(request, true),
+                        gen_arg_string(request, true, opt),
                         response_ty
                     ));
                 }
@@ -193,12 +266,12 @@ pub trait ChitinCodegen {
                         "             {}::{} {{ {} }} => {{\n",
                         Self::get_name(),
                         name,
-                        gen_arg_string(request, false)
+                        gen_arg_string(request, false, opt)
                     ));
                     code.push_str(&format!(
                         "                 let resp = self.{}({}).await;\n",
                         get_handler_name(name, false),
-                        gen_arg_string(request, false)
+                        gen_arg_string(request, false, opt)
                     ));
                     code.push_str(&format!("                 serde_json::to_string(&resp)\n",));
                 }
@@ -233,4 +306,8 @@ pub fn get_handler_name(name: &str, is_router: bool) -> String {
     } else {
         name.to_snake_case()
     }
+}
+
+pub fn get_query_func_name(query_name: &str) -> String {
+    query_name.to_camel_case()
 }

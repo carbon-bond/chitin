@@ -1,11 +1,7 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct Article {
-
-}
+pub struct Article {}
 
 #[derive(Serialize, Deserialize)]
-pub struct User {
-
-}
+pub struct User {}
