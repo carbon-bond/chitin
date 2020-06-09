@@ -1,14 +1,14 @@
 #![allow(dead_code)]
-
 use chitin::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(ChitinCodegen)]
+#[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum UserDetailQuery {
     #[chitin(request, response = "Result<crate::model::User, String>")]
     AskUserDetail { user_id: i32 },
 }
 
-#[derive(ChitinCodegen)]
+#[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum UserQuery {
     #[chitin(request, response = "Result<Vec<String>, String>")]
     AskUserArticles { user_id: i32, count: usize },
@@ -18,7 +18,7 @@ pub enum UserQuery {
     UserDetail(UserDetailQuery),
 }
 
-#[derive(ChitinCodegen)]
+#[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum PartyQuery {
     #[chitin(request, response = "Result<Vec<String>, String>")]
     AskPartyMember { id: i32, count: usize },
@@ -26,7 +26,7 @@ pub enum PartyQuery {
     DeleteParty { id: i32 },
 }
 
-#[derive(ChitinCodegen)]
+#[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum RootQuery {
     #[chitin(request, response = "Result<Vec<String>, String>")]
     AskArticles { board_id: i32, count: usize },
