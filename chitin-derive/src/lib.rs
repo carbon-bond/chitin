@@ -56,12 +56,7 @@ impl EntryType {
                 Entry::Node {
                     name: name.to_owned(),
                     codegen: FuncOrCode::Code(quote! {
-                        |opt, prev| {
-                            prev.push(#query_name);
-                            let code = #query_ident::codegen_inner(opt, prev);
-                            prev.pop();
-                            code
-                        }
+                        #query_ident::codegen_inner
                     }),
                     query_name,
                 }

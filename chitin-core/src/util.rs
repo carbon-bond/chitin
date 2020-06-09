@@ -1,9 +1,9 @@
 use crate::Request;
 use regex::Regex;
 
-pub fn gen_enum_json(prev: &[&'static str], params: &[Request]) -> String {
-    if let Some(cur) = prev.last() {
-        let inner = gen_enum_json(&prev[0..prev.len() - 1], params);
+pub fn gen_enum_json(prev: &[String], params: &[Request]) -> String {
+    if let Some(cur) = prev.first() {
+        let inner = gen_enum_json(&prev[1..prev.len()], params);
         format!("{{ \"{}\": {} }}", cur, inner)
     } else {
         let inner = params
