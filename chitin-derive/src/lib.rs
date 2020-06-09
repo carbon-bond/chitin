@@ -14,6 +14,18 @@ struct Args {
     unnamed: Vec<String>,
 }
 
+impl Args {
+    pub fn to_request_vec(self) -> Vec<Request> {
+        let mut req: Vec<_> = self
+            .named
+            .into_iter()
+            .map(|(name, ty)| Request { name, ty })
+            .collect();
+        req.sort_by(|r1, r2| r1.name.cmp(&r2.name));
+        req
+    }
+}
+
 enum EntryType {
     Leaf,
     Node,
@@ -35,11 +47,7 @@ impl EntryType {
                 Entry::Leaf {
                     name: name.to_owned(),
                     response_ty: response.to_owned(),
-                    request: args
-                        .named
-                        .into_iter()
-                        .map(|(name, ty)| Request { name, ty })
-                        .collect(),
+                    request: args.to_request_vec(),
                 }
             }
             EntryType::Node => {
