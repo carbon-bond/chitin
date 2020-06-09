@@ -3,10 +3,12 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use regex::Regex;
 
+mod util;
+
 #[derive(Clone, Debug)]
 pub enum CodegenOption {
     Server,
-    Client { is_root: bool },
+    Client,
 }
 impl CodegenOption {
     pub fn is_server(&self) -> bool {
@@ -72,7 +74,7 @@ fn gen_arg_string(requests: &[Request], with_type: bool, opt: &CodegenOption) ->
 }
 
 pub enum FuncOrCode {
-    Func(fn(&CodegenOption) -> String),
+    Func(fn(&CodegenOption, &mut Vec<&'static str>) -> String),
     Code(TokenStream),
 }
 impl std::fmt::Debug for FuncOrCode {
@@ -89,9 +91,9 @@ impl std::fmt::Debug for FuncOrCode {
     }
 }
 impl FuncOrCode {
-    fn gen_string(&self, opt: &CodegenOption) -> String {
+    fn gen_string(&self, opt: &CodegenOption, prev: &mut Vec<&'static str>) -> String {
         match self {
-            FuncOrCode::Func(f) => f(opt),
+            FuncOrCode::Func(f) => f(opt, prev),
             _ => panic!(),
         }
     }
@@ -156,28 +158,26 @@ pub trait ChitinCodegen {
         if opt.is_server() {
             Self::server_codegen(opt)
         } else {
-            Self::client_codegen(opt)
-        }
-    }
-    fn client_codegen(opt: &CodegenOption) -> String {
-        let (is_root, leaf_opt) = {
-            let mut t = opt.clone();
-            if let CodegenOption::Client { ref mut is_root } = t {
-                if *is_root {
-                    *is_root = false;
-                    (true, t)
-                } else {
-                    (false, t)
-                }
-            } else {
-                panic!()
-            }
-        };
-        let mut code = "".to_owned();
-        if is_root {
+            let mut code = "".to_owned();
             code.push_str(&format!("abstract class {}Fetcher {{\n", Self::get_name()));
             code.push_str("    abstract fetchResult(query: String): Promise<String>;\n");
+            code.push_str(&Self::client_codegen_inner(
+                opt,
+                &mut vec![Self::get_name()],
+            ));
+            code.push_str("}\n");
+            code
         }
+    }
+    fn codegen_inner(opt: &CodegenOption, prev: &mut Vec<&'static str>) -> String {
+        if opt.is_server() {
+            Self::server_codegen(opt)
+        } else {
+            Self::client_codegen_inner(opt, prev)
+        }
+    }
+    fn client_codegen_inner(opt: &CodegenOption, prev: &mut Vec<&'static str>) -> String {
+        let mut code = "".to_owned();
         for entry in Self::get_entries().iter() {
             match entry {
                 Entry::Leaf {
@@ -192,14 +192,14 @@ pub trait ChitinCodegen {
                         to_typescript_type(response_ty)
                     ));
                     // TODO: fetchResult 的參數要怎麼塞？
-                    code.push_str("        return JSON.parse(await this.fetchResult());\n");
+                    code.push_str(&format!(
+                        "        return JSON.parse(await this.fetchResult({}));\n",
+                        util::gen_enum_json(prev, request)
+                    ));
                     code.push_str("    }\n");
                 }
-                Entry::Node { codegen, .. } => code.push_str(&codegen.gen_string(&leaf_opt)),
+                Entry::Node { codegen, .. } => code.push_str(&codegen.gen_string(&opt, prev)),
             }
-        }
-        if is_root {
-            code.push_str("}\n");
         }
         code
     }
@@ -215,7 +215,7 @@ pub trait ChitinCodegen {
             } = entry
             {
                 routers_name.push(get_router_name(query_name));
-                code.push_str(&codegen.gen_string(opt));
+                code.push_str(&codegen.gen_string(opt, &mut vec![]));
             }
         }
 
