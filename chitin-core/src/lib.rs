@@ -56,7 +56,7 @@ fn gen_arg_string(requests: &[Request], with_type: bool, opt: &CodegenOption) ->
 }
 
 pub enum FuncOrCode {
-    Func(fn(&CodegenOption, &mut Vec<&'static str>) -> String),
+    Func(fn(&CodegenOption, &mut Vec<String>) -> String),
     Code(TokenStream),
 }
 impl std::fmt::Debug for FuncOrCode {
@@ -73,7 +73,7 @@ impl std::fmt::Debug for FuncOrCode {
     }
 }
 impl FuncOrCode {
-    fn gen_string(&self, opt: &CodegenOption, prev: &mut Vec<&'static str>) -> String {
+    fn gen_string(&self, opt: &CodegenOption, prev: &mut Vec<String>) -> String {
         match self {
             FuncOrCode::Func(f) => f(opt, prev),
             _ => panic!(),
@@ -132,6 +132,39 @@ impl ToTokens for Entry {
         }
     }
 }
+fn client_codegen_inner(opt: &CodegenOption, entries: &[Entry], prev: &mut Vec<String>) -> String {
+    let mut code = "".to_owned();
+    for entry in entries.iter() {
+        match entry {
+            Entry::Leaf {
+                name,
+                response_ty,
+                request,
+            } => {
+                code.push_str(&format!(
+                    "    async {}({}): Promise<{}> {{\n",
+                    get_query_func_name(name),
+                    gen_arg_string(request, true, opt),
+                    util::to_typescript_type(response_ty)
+                ));
+                // TODO: fetchResult 的參數要怎麼塞？
+                prev.push(name.clone());
+                code.push_str(&format!(
+                    "        return JSON.parse(await this.fetchResult({}));\n",
+                    util::gen_enum_json(prev, request)
+                ));
+                prev.pop();
+                code.push_str("    }\n");
+            }
+            Entry::Node { name, codegen, .. } => {
+                prev.push(name.clone());
+                code.push_str(&codegen.gen_string(&opt, prev));
+                prev.pop();
+            }
+        }
+    }
+    code
+}
 
 pub trait ChitinCodegen {
     fn get_name() -> &'static str;
@@ -143,47 +176,17 @@ pub trait ChitinCodegen {
             let mut code = "".to_owned();
             code.push_str(&format!("abstract class {}Fetcher {{\n", Self::get_name()));
             code.push_str("    abstract fetchResult(query: String): Promise<string>;\n");
-            code.push_str(&Self::client_codegen_inner(
-                opt,
-                &mut vec![Self::get_name()],
-            ));
+            code.push_str(&Self::codegen_inner(opt, &mut vec![]));
             code.push_str("}\n");
             code
         }
     }
-    fn codegen_inner(opt: &CodegenOption, prev: &mut Vec<&'static str>) -> String {
+    fn codegen_inner(opt: &CodegenOption, prev: &mut Vec<String>) -> String {
         if opt.is_server() {
             Self::server_codegen(opt)
         } else {
-            Self::client_codegen_inner(opt, prev)
+            client_codegen_inner(opt, &Self::get_entries(), prev)
         }
-    }
-    fn client_codegen_inner(opt: &CodegenOption, prev: &mut Vec<&'static str>) -> String {
-        let mut code = "".to_owned();
-        for entry in Self::get_entries().iter() {
-            match entry {
-                Entry::Leaf {
-                    name,
-                    response_ty,
-                    request,
-                } => {
-                    code.push_str(&format!(
-                        "    async {}({}): Promise<{}> {{\n",
-                        get_query_func_name(name),
-                        gen_arg_string(request, true, opt),
-                        util::to_typescript_type(response_ty)
-                    ));
-                    // TODO: fetchResult 的參數要怎麼塞？
-                    code.push_str(&format!(
-                        "        return JSON.parse(await this.fetchResult({}));\n",
-                        util::gen_enum_json(prev, request)
-                    ));
-                    code.push_str("    }\n");
-                }
-                Entry::Node { codegen, .. } => code.push_str(&codegen.gen_string(&opt, prev)),
-            }
-        }
-        code
     }
     fn server_codegen(opt: &CodegenOption) -> String {
         let entries = Self::get_entries();
