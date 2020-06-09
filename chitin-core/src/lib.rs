@@ -142,7 +142,7 @@ pub trait ChitinCodegen {
         } else {
             let mut code = "".to_owned();
             code.push_str(&format!("abstract class {}Fetcher {{\n", Self::get_name()));
-            code.push_str("    abstract fetchResult(query: String): Promise<String>;\n");
+            code.push_str("    abstract fetchResult(query: String): Promise<string>;\n");
             code.push_str(&Self::client_codegen_inner(
                 opt,
                 &mut vec![Self::get_name()],
