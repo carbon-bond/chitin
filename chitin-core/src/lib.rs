@@ -1,7 +1,6 @@
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use regex::Regex;
 
 mod util;
 
@@ -37,40 +36,23 @@ impl ToTokens for Request {
     }
 }
 
-fn to_typescript_type(path: &str) -> String {
-    let re = Regex::new(r"\w*::").unwrap();
-    let result = re.replace_all(path, "");
-    let re = Regex::new(r"Vec").unwrap();
-    let result = re.replace_all(result.as_ref(), "Array");
-    let re = Regex::new(r"\(\)").unwrap();
-    let result = re.replace_all(result.as_ref(), "void");
-    // TODO: 其它基礎型別的轉換
-    result.to_owned().to_string()
-}
-
 fn gen_arg_string(requests: &[Request], with_type: bool, opt: &CodegenOption) -> String {
-    if requests.len() == 0 {
-        "".to_owned()
-    } else {
-        let mut args = if with_type {
-            format!("{}: {}", requests[0].name, requests[0].ty)
-        } else {
-            format!("{}", requests[0].name)
-        };
-        for req in &requests[1..] {
+    requests
+        .iter()
+        .map(|req| {
             if with_type {
                 let ty = if opt.is_server() {
                     req.ty.clone()
                 } else {
-                    to_typescript_type(&req.ty)
+                    util::to_typescript_type(&req.ty)
                 };
-                args.push_str(&format!(", {}: {}", req.name, ty));
+                format!("{}: {}", req.name, ty)
             } else {
-                args.push_str(&format!(", {}", req.name));
+                req.name.clone()
             }
-        }
-        args
-    }
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 pub enum FuncOrCode {
@@ -189,7 +171,7 @@ pub trait ChitinCodegen {
                         "    async {}({}): Promise<{}> {{\n",
                         get_query_func_name(name),
                         gen_arg_string(request, true, opt),
-                        to_typescript_type(response_ty)
+                        util::to_typescript_type(response_ty)
                     ));
                     // TODO: fetchResult 的參數要怎麼塞？
                     code.push_str(&format!(
