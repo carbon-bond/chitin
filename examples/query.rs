@@ -4,15 +4,15 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum UserDetailQuery {
-    #[chitin(request, response = "Result<crate::model::User, String>")]
+    #[chitin(request, response = "<crate::model::User, String>")]
     AskUserDetail { user_id: i32 },
 }
 
 #[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum UserQuery {
-    #[chitin(request, response = "Result<Vec<String>, String>")]
+    #[chitin(request, response = "Vec<String>")]
     AskUserArticles { user_id: i32, count: usize },
-    #[chitin(request, response = "Result<Vec<crate::model::User>, String>")]
+    #[chitin(request, response = "Vec<crate::model::User>")]
     AskUserFriends { user_id: i32 },
     #[chitin(router)]
     UserDetail(UserDetailQuery),
@@ -20,17 +20,17 @@ pub enum UserQuery {
 
 #[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum PartyQuery {
-    #[chitin(request, response = "Result<Vec<String>, String>")]
+    #[chitin(request, response = "Vec<String>")]
     AskPartyMember { id: i32, count: usize },
-    #[chitin(request, response = "Result<(), String>")]
+    #[chitin(request, response = "()")]
     DeleteParty { id: i32 },
 }
 
 #[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum RootQuery {
-    #[chitin(request, response = "Result<Vec<String>, String>")]
+    #[chitin(request, response = "Vec<String>")]
     AskArticles { board_id: i32, count: usize },
-    #[chitin(request, response = "Result<(), String>")]
+    #[chitin(request, response = "()")]
     PostArticle {
         board_id: i32,
         article: crate::model::Article,

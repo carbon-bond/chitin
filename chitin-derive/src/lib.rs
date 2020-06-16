@@ -1,6 +1,6 @@
 extern crate proc_macro;
 
-use chitin_core::{Entry, FuncOrCode, Request};
+use chitin_core::{Entry, FuncOrCode, Request, ResponseTy};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
@@ -46,7 +46,7 @@ impl EntryType {
                 let response = key_value.get("response").expect("找不到 response");
                 Entry::Leaf {
                     name: name.to_owned(),
-                    response_ty: response.to_owned(),
+                    response_ty: ResponseTy(response.to_owned()),
                     request: args.to_request_vec(),
                 }
             }
