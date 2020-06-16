@@ -82,10 +82,17 @@ impl FuncOrCode {
 }
 
 #[derive(Debug)]
+pub struct ResponseTy(pub String);
+impl ResponseTy {
+    pub fn as_result(&self) -> String {
+        format!("Result<{}, String>", self.0)
+    }
+}
+#[derive(Debug)]
 pub enum Entry {
     Leaf {
         name: String,
-        response_ty: String,
+        response_ty: ResponseTy,
         request: Vec<Request>,
     },
     Node {
@@ -121,10 +128,11 @@ impl ToTokens for Entry {
                 request,
             } => {
                 let request = request.iter();
+                let response_ty = &response_ty.0;
                 tokens.extend(quote! {
                     Entry::Leaf {
                         name: #name.to_owned(),
-                        response_ty: #response_ty.to_owned(),
+                        response_ty: ResponseTy(#response_ty.to_owned()),
                         request: vec![#(#request),*]
                     }
                 });
@@ -145,9 +153,8 @@ fn client_codegen_inner(opt: &CodegenOption, entries: &[Entry], prev: &mut Vec<S
                     "    async {}({}): Promise<{}> {{\n",
                     get_query_func_name(name),
                     gen_arg_string(request, true, opt),
-                    util::to_typescript_type(response_ty)
+                    util::to_typescript_type(&response_ty.as_result())
                 ));
-                // TODO: fetchResult 的參數要怎麼塞？
                 prev.push(name.clone());
                 code.push_str(&format!(
                     "        return JSON.parse(await this.fetchResult({}));\n",
@@ -225,7 +232,7 @@ pub trait ChitinCodegen {
                         "    async fn {}(&self, {}) -> {};\n",
                         get_handler_name(name, false),
                         gen_arg_string(request, true, opt),
-                        response_ty
+                        &response_ty.as_result()
                     ));
                 }
                 Entry::Node {
