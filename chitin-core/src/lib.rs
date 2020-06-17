@@ -212,7 +212,7 @@ pub trait ChitinCodegen {
         }
 
         code.push_str(&format!(
-            "#[async_trait]\ntrait {} {{\n",
+            "#[async_trait]\npub trait {} {{\n",
             get_router_name(&Self::get_name())
         ));
         for router_name in routers_name.iter() {
