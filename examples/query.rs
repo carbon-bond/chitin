@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, ChitinCodegen)]
 pub enum UserDetailQuery {
-    #[chitin(request, response = "<crate::model::User, String>")]
+    #[chitin(request, response = "(crate::model::User, String)")]
     AskUserDetail { user_id: i32 },
 }
 
