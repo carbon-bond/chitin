@@ -26,6 +26,11 @@ pub fn to_typescript_type(path: &str) -> String {
     let result = re.replace_all(result.as_ref(), "number");
     let re = Regex::new(r"String").unwrap();
     let result = re.replace_all(result.as_ref(), "string");
+    // 處理 tuple
+    let re = Regex::new(r"\(").unwrap();
+    let result = re.replace_all(result.as_ref(), "[");
+    let re = Regex::new(r"\)").unwrap();
+    let result = re.replace_all(result.as_ref(), "]");
     // TODO: 其它基礎型別的轉換
     result.to_owned().to_string()
 }

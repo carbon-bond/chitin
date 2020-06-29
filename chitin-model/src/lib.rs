@@ -11,7 +11,6 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
             for content in contents {
                 match content {
                     Item::Struct(item_struct) => {
-                        println!("struct name = {}", item_struct.ident);
                         structs.push(item_struct.ident.clone());
                     }
                     _ => {}
@@ -22,7 +21,6 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
             panic!("mode 沒有 content");
         }
     }
-    println!("structs: {:?}", structs);
     let ident = &item_mod.ident;
     let attrs = &item_mod.attrs;
     let (_, ref content) = item_mod.content.as_ref().unwrap();
