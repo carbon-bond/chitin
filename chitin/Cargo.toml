@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 chitin_derive = { path = "../chitin-derive" }
 chitin_core = { path = "../chitin-core" }
+chitin_model = { path = "../chitin-model" }

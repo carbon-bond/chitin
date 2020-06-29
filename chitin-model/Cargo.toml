@@ -1,0 +1,13 @@
+[package]
+name = "chitin_model"
+version = "0.1.0"
+authors = ["MROS <yc1043@gmail.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0"
+syn = "1.0"
+quote = "1.0"

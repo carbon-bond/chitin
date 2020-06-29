@@ -11,6 +11,7 @@ fn main() {
         println!("use serde_json::error::Error;");
         println!("{}", RootQuery::codegen(&CodegenOption::Server));
     } else if args[1] == "client" {
+        println!("{}", model::gen_typescript());
         println!("{}", RootQuery::codegen(&CodegenOption::Client));
     } else {
         panic!("未知的指令：{}", args[1]);
