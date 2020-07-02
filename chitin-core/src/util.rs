@@ -1,5 +1,6 @@
 use crate::Request;
 use regex::Regex;
+use std::borrow::Cow;
 
 pub fn gen_enum_json(prev: &[String], params: &[Request]) -> String {
     if let Some(cur) = prev.first() {
@@ -30,15 +31,7 @@ pub fn to_typescript_type(path: &str) -> String {
     let re = Regex::new(r"\(").unwrap();
     let result = re.replace_all(result.as_ref(), "[");
     let re = Regex::new(r"\)").unwrap();
-    let mut result = re.replace_all(result.as_ref(), "]");
-    // 處理 Option
-    // TODO: 處理多層 Option 與 tuple
-    let re = Regex::new(r"^Option<(.+)>$").unwrap();
-    if let Some(caps) = re.captures(result.as_ref()) {
-        if let Some(inner) = caps.get(1) {
-            result = std::borrow::Cow::Owned(format!("{}?", inner.as_str()));
-        }
-    }
+    let result = re.replace_all(result.as_ref(), "]");
     // TODO: 其它基礎型別的轉換
     result.to_owned().to_string()
 }

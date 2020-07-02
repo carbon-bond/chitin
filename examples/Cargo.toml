@@ -1,22 +1,21 @@
 [package]
-name = "examples"
+name = "chitin-examples"
 version = "0.1.0"
 edition = "2018"
-default-run = "main"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[[bin]]
-name = "codegen"
-path = "codegen.rs"
-
-[[bin]]
-name = "main"
-path = "main.rs"
+[build-dependencies]
+chitin = { path = "../chitin" }
+serde = { version = "1.0", features = ["derive"] }
+typescript-definitions = { git = "https://github.com/carbon-bond/typescript-definitions" }
 
 [dependencies]
 chitin = { path = "../chitin" }
+typescript-definitions = { git = "https://github.com/carbon-bond/typescript-definitions" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 async-trait = "0.1.31"
-typescript-definitions = { git = "https://github.com/carbon-bond/typescript-definitions" }
+hyper = "0.13.6"
+tokio = { version = "0.2", features = ["full"] }
+futures = "0.3"
+futures-util = "0.3.5"
+lazy_static = "1.4.0"
