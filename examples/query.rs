@@ -36,7 +36,7 @@ pub enum RootQuery {
         article: crate::model::Article,
     },
     #[chitin(request, response = "String")]
-    AskBoard { board_id: i32 },
+    AskBoard { board_id: Option<i32> },
     #[chitin(router)]
     User(UserQuery), // 注意：假如這裡打錯成 `User(i32)` 或其它不是 `ChitinCodegen` 的東西，會報出很難解的錯誤
     #[chitin(router)]
