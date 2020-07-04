@@ -89,7 +89,7 @@ impl ResponseTy {
     }
 }
 #[derive(Debug)]
-pub enum Entry {
+pub enum ChitinEntry {
     Leaf {
         name: String,
         response_ty: ResponseTy,
@@ -102,17 +102,17 @@ pub enum Entry {
     },
 }
 
-impl ToTokens for Entry {
+impl ToTokens for ChitinEntry {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Entry::Node {
+            ChitinEntry::Node {
                 name,
                 query_name,
                 codegen,
             } => {
                 if let FuncOrCode::Code(code) = codegen {
                     tokens.extend(quote! {
-                        Entry::Node {
+                        ChitinEntry::Node {
                             name: #name.to_owned(),
                             query_name: #query_name.to_owned(),
                             codegen: FuncOrCode::Func(#code)
@@ -122,7 +122,7 @@ impl ToTokens for Entry {
                     panic!("內部實作錯誤")
                 }
             }
-            Entry::Leaf {
+            ChitinEntry::Leaf {
                 name,
                 response_ty,
                 request,
@@ -130,7 +130,7 @@ impl ToTokens for Entry {
                 let request = request.iter();
                 let response_ty = &response_ty.0;
                 tokens.extend(quote! {
-                    Entry::Leaf {
+                    ChitinEntry::Leaf {
                         name: #name.to_owned(),
                         response_ty: ResponseTy(#response_ty.to_owned()),
                         request: vec![#(#request),*]
@@ -140,11 +140,15 @@ impl ToTokens for Entry {
         }
     }
 }
-fn client_codegen_inner(opt: &CodegenOption, entries: &[Entry], prev: &mut Vec<String>) -> String {
+fn client_codegen_inner(
+    opt: &CodegenOption,
+    entries: &[ChitinEntry],
+    prev: &mut Vec<String>,
+) -> String {
     let mut code = "".to_owned();
     for entry in entries.iter() {
         match entry {
-            Entry::Leaf {
+            ChitinEntry::Leaf {
                 name,
                 response_ty,
                 request,
@@ -163,7 +167,7 @@ fn client_codegen_inner(opt: &CodegenOption, entries: &[Entry], prev: &mut Vec<S
                 prev.pop();
                 code.push_str("    }\n");
             }
-            Entry::Node { name, codegen, .. } => {
+            ChitinEntry::Node { name, codegen, .. } => {
                 prev.push(name.clone());
                 code.push_str(&codegen.gen_string(&opt, prev));
                 prev.pop();
@@ -175,7 +179,7 @@ fn client_codegen_inner(opt: &CodegenOption, entries: &[Entry], prev: &mut Vec<S
 
 pub trait ChitinCodegen {
     fn get_name() -> &'static str;
-    fn get_entries() -> Vec<Entry>;
+    fn get_entries() -> Vec<ChitinEntry>;
     fn codegen(opt: &CodegenOption) -> String {
         if opt.is_server() {
             Self::server_codegen(opt)
@@ -203,7 +207,7 @@ pub trait ChitinCodegen {
         let mut routers_name = vec![];
         let mut code = "".to_owned();
         for entry in entries.iter() {
-            if let Entry::Node {
+            if let ChitinEntry::Node {
                 query_name,
                 codegen,
                 ..
@@ -226,7 +230,7 @@ pub trait ChitinCodegen {
         }
         for entry in entries.iter() {
             match entry {
-                Entry::Leaf {
+                ChitinEntry::Leaf {
                     name,
                     response_ty,
                     request,
@@ -238,7 +242,7 @@ pub trait ChitinCodegen {
                         &response_ty.as_result()
                     ));
                 }
-                Entry::Node {
+                ChitinEntry::Node {
                     name, query_name, ..
                 } => {
                     code.push_str(&format!(
@@ -256,7 +260,7 @@ pub trait ChitinCodegen {
         code.push_str("        match query {\n");
         for entry in entries.iter() {
             match entry {
-                Entry::Leaf { name, request, .. } => {
+                ChitinEntry::Leaf { name, request, .. } => {
                     code.push_str(&format!(
                         "             {}::{} {{ {} }} => {{\n",
                         Self::get_name(),
@@ -270,7 +274,7 @@ pub trait ChitinCodegen {
                     ));
                     code.push_str(&format!("                 serde_json::to_string(&resp)\n",));
                 }
-                Entry::Node { name, .. } => {
+                ChitinEntry::Node { name, .. } => {
                     code.push_str(&format!(
                         "             {}::{}(query) => {{\n",
                         Self::get_name(),

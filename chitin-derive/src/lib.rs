@@ -1,6 +1,6 @@
 extern crate proc_macro;
 
-use chitin_core::{Entry, FuncOrCode, Request, ResponseTy};
+use chitin_core::{ChitinEntry, FuncOrCode, Request, ResponseTy};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
@@ -40,11 +40,16 @@ impl EntryType {
             _ => panic!(format!("{} 是啥？", s)),
         }
     }
-    fn gen_entry(&self, name: &str, key_value: &HashMap<String, String>, mut args: Args) -> Entry {
+    fn gen_entry(
+        &self,
+        name: &str,
+        key_value: &HashMap<String, String>,
+        mut args: Args,
+    ) -> ChitinEntry {
         match self {
             EntryType::Leaf => {
                 let response = key_value.get("response").expect("找不到 response");
-                Entry::Leaf {
+                ChitinEntry::Leaf {
                     name: name.to_owned(),
                     response_ty: ResponseTy(response.to_owned()),
                     request: args.to_request_vec(),
@@ -53,7 +58,7 @@ impl EntryType {
             EntryType::Node => {
                 let query_name = args.unnamed.pop().expect("router 項目必須單有一個參數");
                 let query_ident = TokenStream2::from_str(&query_name).unwrap();
-                Entry::Node {
+                ChitinEntry::Node {
                     name: name.to_owned(),
                     codegen: FuncOrCode::Code(quote! {
                         #query_ident::codegen_inner
@@ -61,7 +66,7 @@ impl EntryType {
                     query_name,
                 }
             }
-            _ => panic!("未指定項目的類型！"),
+            EntryType::Uninit => panic!("未指定項目的類型！"),
         }
     }
 }
@@ -69,7 +74,7 @@ impl EntryType {
 #[proc_macro_derive(ChitinCodegen, attributes(chitin))]
 pub fn derive_router(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
-    let mut entries = Vec::<Entry>::new();
+    let mut entries = Vec::<ChitinEntry>::new();
     if let Data::Enum(data_enum) = ast.data {
         for variant in data_enum.variants.iter() {
             let entry_name = variant.ident.to_string();
@@ -132,7 +137,7 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
             fn get_name() -> &'static str {
                 #name
             }
-            fn get_entries() -> Vec<Entry> {
+            fn get_entries() -> Vec<ChitinEntry> {
                 vec![#(#entries),*]
             }
         }
