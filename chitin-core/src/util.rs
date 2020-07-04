@@ -1,6 +1,5 @@
 use crate::Request;
 use regex::Regex;
-use std::borrow::Cow;
 
 pub fn gen_enum_json(prev: &[String], params: &[Request]) -> String {
     if let Some(cur) = prev.first() {

@@ -15,7 +15,7 @@ fn main() -> std::io::Result<()> {
     server_file.write_all(RootQuery::codegen(&CodegenOption::Server).as_bytes())?;
 
     let mut client_file = File::create("client/api_trait.ts")?;
-    client_file.write_all(b"export type Option<T> = T | undefined | null;\n");
+    client_file.write_all(b"export type Option<T> = T | undefined | null;\n")?;
     client_file.write_all(
         b"export type Result<T, E> = {
     'Ok': T
