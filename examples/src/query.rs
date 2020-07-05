@@ -12,6 +12,10 @@ pub enum UserDetailQuery {
 pub enum UserQuery {
     #[chitin(request, response = "Vec<crate::model::Article>")]
     AskUserArticles { user_id: i32, count: usize },
+    #[chitin(request, response = "()")]
+    Login { user_id: i32 },
+    #[chitin(request, response = "i32")]
+    WhoAmI {},
     #[chitin(router)]
     UserDetail(UserDetailQuery),
 }

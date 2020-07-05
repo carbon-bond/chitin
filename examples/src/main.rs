@@ -9,7 +9,18 @@ use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use lazy_static::lazy_static;
 use query::*;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+
+#[derive(Clone)]
+pub struct Ctx {
+    pub user_id: Arc<Mutex<Option<i32>>>,
+}
+impl Ctx {
+    pub fn login(&self, user_id: i32) {
+        let mut id = self.user_id.lock().unwrap();
+        *id = Some(user_id);
+    }
+}
 
 /// This is our service handler. It receives a Request, routes on its
 /// path, and returns a Future of a Response.
@@ -21,7 +32,7 @@ async fn echo(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
             let query: RootQuery = serde_json::from_slice(&body.to_vec()).unwrap();
             println!("query: {:#?}", query);
             let root: api::RootQuery = Default::default();
-            let ret = root.handle(query).await.unwrap();
+            let ret = root.handle(CTX.clone(), query).await.unwrap();
             Ok(Response::new(Body::from(ret)))
         }
 
@@ -37,6 +48,9 @@ async fn echo(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
 lazy_static! {
     pub static ref USERS: Mutex<HashMap<i32, model::User>> = Mutex::new(HashMap::new());
     pub static ref ARTICLES: Mutex<Vec<model::Article>> = Mutex::new(Vec::new());
+    pub static ref CTX: Ctx = Ctx {
+        user_id: Arc::new(Mutex::new(None))
+    };
 }
 
 #[tokio::main]

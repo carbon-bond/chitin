@@ -54,6 +54,16 @@ vorpal
     .action(function (args) {
         return report.bind(this)(api_fetcher.postArticle(null));
     });
+vorpal
+    .command('whoami', '查登入狀態')
+    .action(function (args) {
+        return report.bind(this)(api_fetcher.whoAmI());
+    });
+vorpal
+    .command('login <user_id>', '登入')
+    .action(function (args) {
+        return report.bind(this)(api_fetcher.login(args.user_id));
+    });
 
 vorpal
     .delimiter('$')

@@ -6,14 +6,25 @@ pub mod chitin_util;
 
 #[derive(Clone, Debug)]
 pub enum CodegenOption {
-    Server { error: &'static str },
-    Client { error: &'static str },
+    Server {
+        error: &'static str,
+        context: &'static str,
+    },
+    Client {
+        error: &'static str,
+    },
 }
 impl CodegenOption {
     pub fn error_type(&self) -> &'static str {
         match self {
-            Self::Server { error } => error,
+            Self::Server { error, .. } => error,
             Self::Client { error } => error,
+        }
+    }
+    pub fn ctx_type(&self) -> Option<&'static str> {
+        match self {
+            Self::Server { context, .. } => Some(context),
+            _ => None,
         }
     }
     pub fn is_server(&self) -> bool {
@@ -242,8 +253,9 @@ pub trait ChitinCodegen {
                     request,
                 } => {
                     code.push_str(&format!(
-                        "    async fn {}(&self, {}) -> {};\n",
+                        "    async fn {}(&self, context: {}, {}) -> {};\n",
                         get_handler_name(name, false),
+                        opt.ctx_type().unwrap(),
                         gen_arg_string(request, true, opt),
                         &response_ty.as_result(&opt)
                     ));
@@ -260,7 +272,8 @@ pub trait ChitinCodegen {
             }
         }
         code.push_str(&format!(
-            "    async fn handle(&self, query: {}) -> Result<String, Error> {{\n",
+            "    async fn handle(&self, context: {}, query: {}) -> Result<String, Error> {{\n",
+            opt.ctx_type().unwrap(),
             Self::get_name()
         ));
         code.push_str("        match query {\n");
@@ -274,7 +287,7 @@ pub trait ChitinCodegen {
                         gen_arg_string(request, false, opt)
                     ));
                     code.push_str(&format!(
-                        "                 let resp = self.{}({}).await;\n",
+                        "                 let resp = self.{}(context, {}).await;\n",
                         get_handler_name(name, false),
                         gen_arg_string(request, false, opt)
                     ));
@@ -287,7 +300,7 @@ pub trait ChitinCodegen {
                         name
                     ));
                     code.push_str(&format!(
-                        "                 self.{}().handle(query).await\n",
+                        "                 self.{}().handle(context, query).await\n",
                         get_handler_name(name, true)
                     ));
                 }
