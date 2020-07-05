@@ -24,7 +24,12 @@ pub fn to_typescript_type(path: &str) -> String {
     let result = re.replace_all(result.as_ref(), "null");
     let re = Regex::new(r"(usize|i32|u32|i64|u64|f32|f64)").unwrap();
     let result = re.replace_all(result.as_ref(), "number");
+    let re = Regex::new(r"bool").unwrap();
+    let result = re.replace_all(result.as_ref(), "boolean");
     let re = Regex::new(r"String").unwrap();
+    let result = re.replace_all(result.as_ref(), "string");
+    // 處理時間
+    let re = Regex::new(r"DateTime< *Utc *>").unwrap();
     let result = re.replace_all(result.as_ref(), "string");
     // 處理 tuple
     let re = Regex::new(r"\(").unwrap();

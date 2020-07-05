@@ -2,7 +2,7 @@ use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
-mod util;
+pub mod chitin_util;
 
 #[derive(Clone, Debug)]
 pub enum CodegenOption {
@@ -44,7 +44,7 @@ fn gen_arg_string(requests: &[Request], with_type: bool, opt: &CodegenOption) ->
                 let ty = if opt.is_server() {
                     req.ty.clone()
                 } else {
-                    util::to_typescript_type(&req.ty)
+                    chitin_util::to_typescript_type(&req.ty)
                 };
                 format!("{}: {}", req.name, ty)
             } else {
@@ -157,12 +157,12 @@ fn client_codegen_inner(
                     "    async {}({}): Promise<{}> {{\n",
                     get_query_func_name(name),
                     gen_arg_string(request, true, opt),
-                    util::to_typescript_type(&response_ty.as_result())
+                    chitin_util::to_typescript_type(&response_ty.as_result())
                 ));
                 prev.push(name.clone());
                 code.push_str(&format!(
                     "        return JSON.parse(await this.fetchResult({}));\n",
-                    util::gen_enum_json(prev, request)
+                    chitin_util::gen_enum_json(prev, request)
                 ));
                 prev.pop();
                 code.push_str("    }\n");

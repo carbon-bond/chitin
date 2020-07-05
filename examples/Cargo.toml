@@ -7,6 +7,7 @@ edition = "2018"
 chitin = { path = "../chitin" }
 serde = { version = "1.0", features = ["derive"] }
 typescript-definitions = { git = "https://github.com/carbon-bond/typescript-definitions" }
+chrono = { version = "0.4.7", features = ["serde"] }
 
 [dependencies]
 chitin = { path = "../chitin" }
@@ -19,3 +20,4 @@ tokio = { version = "0.2", features = ["full"] }
 futures = "0.3"
 futures-util = "0.3.5"
 lazy_static = "1.4.0"
+chrono = { version = "0.4.7", features = ["serde"] }

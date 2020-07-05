@@ -53,7 +53,8 @@ impl RootQueryRouter for RootQuery {
     }
     async fn post_article(&self, article: Option<crate::model::Article>) -> Result<(), String> {
         let mut articles = crate::ARTICLES.lock().unwrap();
-        if let Some(article) = article {
+        if let Some(mut article) = article {
+            article.created_time = Some(chrono::Utc::now());
             articles.push(article);
         }
         Ok(())

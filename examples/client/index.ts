@@ -45,7 +45,8 @@ vorpal
         return report.bind(this)(api_fetcher.postArticle({
             author_id: args.author_id,
             title: args.title,
-            content: args.content
+            content: args.content,
+            created_time: null
         }));
     });
 vorpal
