@@ -6,13 +6,19 @@ pub mod chitin_util;
 
 #[derive(Clone, Debug)]
 pub enum CodegenOption {
-    Server,
-    Client,
+    Server { error: &'static str },
+    Client { error: &'static str },
 }
 impl CodegenOption {
+    pub fn error_type(&self) -> &'static str {
+        match self {
+            Self::Server { error } => error,
+            Self::Client { error } => error,
+        }
+    }
     pub fn is_server(&self) -> bool {
         match self {
-            Self::Server => true,
+            Self::Server { .. } => true,
             _ => false,
         }
     }
@@ -84,8 +90,8 @@ impl FuncOrCode {
 #[derive(Debug)]
 pub struct ResponseTy(pub String);
 impl ResponseTy {
-    pub fn as_result(&self) -> String {
-        format!("Result<{}, String>", self.0)
+    pub fn as_result(&self, opt: &CodegenOption) -> String {
+        format!("Result<{}, {}>", self.0, opt.error_type())
     }
 }
 #[derive(Debug)]
@@ -157,7 +163,7 @@ fn client_codegen_inner(
                     "    async {}({}): Promise<{}> {{\n",
                     get_query_func_name(name),
                     gen_arg_string(request, true, opt),
-                    chitin_util::to_typescript_type(&response_ty.as_result())
+                    chitin_util::to_typescript_type(&response_ty.as_result(&opt))
                 ));
                 prev.push(name.clone());
                 code.push_str(&format!(
@@ -239,7 +245,7 @@ pub trait ChitinCodegen {
                         "    async fn {}(&self, {}) -> {};\n",
                         get_handler_name(name, false),
                         gen_arg_string(request, true, opt),
-                        &response_ty.as_result()
+                        &response_ty.as_result(&opt)
                     ));
                 }
                 ChitinEntry::Node {

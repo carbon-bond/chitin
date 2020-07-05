@@ -12,7 +12,8 @@ fn main() -> std::io::Result<()> {
     server_file.write_all(b"use async_trait::async_trait;\n")?;
     server_file.write_all(b"use crate::query::*;\n")?;
     server_file.write_all(b"use serde_json::error::Error;\n")?;
-    server_file.write_all(RootQuery::codegen(&CodegenOption::Server).as_bytes())?;
+    server_file
+        .write_all(RootQuery::codegen(&CodegenOption::Server { error: "String" }).as_bytes())?;
 
     let mut client_file = File::create("client/api_trait.ts")?;
     client_file.write_all(b"export type Option<T> = T | undefined | null;\n")?;
@@ -24,6 +25,7 @@ fn main() -> std::io::Result<()> {
 };\n",
     )?;
     client_file.write_all(model::gen_typescript().as_bytes())?;
-    client_file.write_all(RootQuery::codegen(&CodegenOption::Client).as_bytes())?;
+    client_file
+        .write_all(RootQuery::codegen(&CodegenOption::Client { error: "String" }).as_bytes())?;
     Ok(())
 }
