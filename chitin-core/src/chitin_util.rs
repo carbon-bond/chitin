@@ -15,6 +15,13 @@ pub fn gen_enum_json(prev: &[String], params: &[Request]) -> String {
     }
 }
 
+// 對 typescript-definitions 生成的 typescript type 再做一次轉換
+pub fn type_convert(s: &str) -> String {
+    let re = Regex::new(r"DateTime< *Utc *>").unwrap();
+    let result = re.replace_all(s, "string");
+    result.to_owned().to_string()
+}
+
 pub fn to_typescript_type(path: &str) -> String {
     let re = Regex::new(r"\w*::").unwrap();
     let result = re.replace_all(path, "");

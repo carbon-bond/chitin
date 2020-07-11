@@ -30,7 +30,7 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
             pub fn gen_typescript() -> String {
                 let mut ret = String::new();
                 #(
-                    let ty = chitin_util::to_typescript_type(&#structs::type_script_ify());
+                    let ty = chitin_util::type_convert(&#structs::type_script_ify());
                     ret.push_str(&ty);
                     ret.push('\n');
                 )*
