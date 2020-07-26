@@ -245,11 +245,6 @@ pub trait ChitinCodegen {
                 router_name, router_name
             ));
         }
-        // NOTE: 錯誤處理
-        code.push_str(&format!(
-            "    fn on_error(&self, _err: &{}) {{}}\n",
-            opt.error_type()
-        ));
 
         for entry in entries.iter() {
             match entry {
@@ -278,12 +273,12 @@ pub trait ChitinCodegen {
             }
         }
         code.push_str(&format!(
-            "    async fn handle(&self, context: {}, query: {}) -> Result<Result<String, Error>, {}> {{\n",
+            "    async fn handle(&self, context: {}, query: {}) -> Result<(String, Option<{}>), Error> {{\n",
             opt.ctx_type().unwrap(),
             Self::get_name(),
             opt.error_type()
         ));
-        code.push_str("        let resp = match query {\n");
+        code.push_str("        match query {\n");
         for entry in entries.iter() {
             match entry {
                 ChitinEntry::Leaf { name, request, .. } => {
@@ -298,7 +293,8 @@ pub trait ChitinCodegen {
                         get_handler_name(name, false),
                         gen_arg_string(request, false, opt)
                     ));
-                    code.push_str("                 resp.map(|r| serde_json::to_string(&r))\n");
+                    code.push_str("                 let s = serde_json::to_string(&resp)?;\n");
+                    code.push_str("                 Ok((s, resp.err()))\n");
                 }
                 ChitinEntry::Node { name, .. } => {
                     code.push_str(&format!(
@@ -314,9 +310,7 @@ pub trait ChitinCodegen {
             }
             code.push_str("             }\n");
         }
-        code.push_str("        };\n");
-        code.push_str("        if let Err(err) = &resp {\n self.on_error(err) \n}\n");
-        code.push_str("        resp");
+        code.push_str("        }\n");
         code.push_str("    }\n");
         code.push_str("}\n");
         code
