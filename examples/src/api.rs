@@ -63,6 +63,9 @@ pub struct RootQuery {
 #[async_trait]
 impl RootQueryRouter for RootQuery {
     type UserQueryRouter = UserQuery;
+    fn on_error(&self, err: &String) {
+        println!("錯誤！{}", err);
+    }
     async fn ask_articles(
         &self,
         _ctx: Ctx,

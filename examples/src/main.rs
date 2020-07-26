@@ -32,8 +32,15 @@ async fn echo(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
             let query: RootQuery = serde_json::from_slice(&body.to_vec()).unwrap();
             println!("query: {:#?}", query);
             let root: api::RootQuery = Default::default();
-            let ret = root.handle(CTX.clone(), query).await.unwrap();
-            Ok(Response::new(Body::from(ret)))
+            let ret = root.handle(CTX.clone(), query).await;
+            let ret = match ret {
+                Ok(Ok(ret)) => Ok(ret),
+                Ok(Err(serde_err)) => panic!(serde_err),
+                Err(e) => Err(e),
+            };
+            Ok(Response::new(Body::from(
+                serde_json::to_string(&ret).unwrap(),
+            )))
         }
 
         // Return the 404 Not Found for other routes.
