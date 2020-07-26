@@ -245,6 +245,12 @@ pub trait ChitinCodegen {
                 router_name, router_name
             ));
         }
+        // NOTE: 錯誤處理
+        code.push_str(&format!(
+            "    fn on_error(&self, _err: &{}) {{}}\n",
+            opt.error_type()
+        ));
+
         for entry in entries.iter() {
             match entry {
                 ChitinEntry::Leaf {
@@ -291,7 +297,10 @@ pub trait ChitinCodegen {
                         get_handler_name(name, false),
                         gen_arg_string(request, false, opt)
                     ));
-                    code.push_str(&format!("                 serde_json::to_string(&resp)\n",));
+                    code.push_str(&format!(
+                        "                 if let Err(err) = &resp {{\n self.on_error(err);\n }}\n",
+                    ));
+                    code.push_str("                 serde_json::to_string(&resp)\n");
                 }
                 ChitinEntry::Node { name, .. } => {
                     code.push_str(&format!(
