@@ -1,5 +1,6 @@
 import * as _vorpal from 'vorpal';
 import * as api from './api';
+import { UserType } from './api_trait';
 
 const vorpal = new _vorpal();
 
@@ -36,7 +37,7 @@ vorpal
 vorpal
     .command('create_user <name> <sentence>', '創建使用者，伺服器會回傳新創使用者的 id')
     .action(function (args) {
-        return report.bind(this)(api_fetcher.createUser({ name: args.name, sentence: args.sentence }));
+        return report.bind(this)(api_fetcher.createUser({ name: args.name, sentence: args.sentence, ty: UserType.Super }));
     });
 
 vorpal

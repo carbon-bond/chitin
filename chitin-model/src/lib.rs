@@ -5,13 +5,16 @@ use syn::{parse_macro_input, Item, ItemMod};
 #[proc_macro_attribute]
 pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let item_mod: &ItemMod = &parse_macro_input!(item as ItemMod);
-    let mut structs = Vec::new();
+    let mut models = Vec::new();
     match item_mod.content {
         Some((_, ref contents)) => {
             for content in contents {
                 match content {
                     Item::Struct(item_struct) => {
-                        structs.push(item_struct.ident.clone());
+                        models.push(item_struct.ident.clone());
+                    }
+                    Item::Enum(item_enum) => {
+                        models.push(item_enum.ident.clone());
                     }
                     _ => {}
                 }
@@ -30,7 +33,7 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
             pub fn gen_typescript() -> String {
                 let mut ret = String::new();
                 #(
-                    let ty = chitin_util::type_convert(&#structs::type_script_ify());
+                    let ty = chitin_util::type_convert(&#models::type_script_ify());
                     ret.push_str(&ty);
                     ret.push('\n');
                 )*

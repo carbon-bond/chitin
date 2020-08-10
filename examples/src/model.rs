@@ -13,11 +13,17 @@ mod model {
         pub content: String,
         pub created_time: Option<DateTime<Utc>>,
     }
+    #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
+    pub enum UserType {
+        Super,
+        Nobody,
+    }
 
     #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
     pub struct User {
         pub name: String,
         pub sentence: String,
+        pub ty: UserType,
     }
 }
 
