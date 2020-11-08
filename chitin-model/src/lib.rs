@@ -25,9 +25,8 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         if attr.is_none() {
                             continue;
                         }
-                        let idents = extract_use_ident(&item_used.tree)
+                        extract_use_ident(&mut models, &item_used.tree)
                             .expect("chitin_model_use 目前只支援單一名字");
-                        models.extend(idents);
                     }
                     _ => {}
                 }
@@ -63,17 +62,18 @@ pub fn chitin_model_use(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-fn extract_use_ident(mut tree: &UseTree) -> Result<Vec<Ident>, ()> {
-    let mut idents = vec![];
-    loop {
-        match tree {
-            UseTree::Path(path) => tree = path.tree.as_ref(),
-            UseTree::Name(name) => {
-                idents.push(name.ident.clone());
-                break;
-            }
-            _ => return Err(()),
+fn extract_use_ident(idents: &mut Vec<Ident>, tree: &UseTree) -> Result<(), ()> {
+    match tree {
+        UseTree::Path(path) => {
+            extract_use_ident(idents, path.tree.as_ref())?;
         }
+        UseTree::Name(name) => idents.push(name.ident.clone()),
+        UseTree::Group(group) => {
+            for item in group.items.iter() {
+                extract_use_ident(idents, item)?;
+            }
+        }
+        _ => return Err(()),
     }
-    Ok(idents)
+    Ok(())
 }

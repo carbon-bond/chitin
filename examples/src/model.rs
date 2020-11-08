@@ -3,8 +3,16 @@ use serde::{Deserialize, Serialize};
 use typescript_definitions::TypeScriptify;
 
 #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
-pub struct Test {
+pub struct Test2 {
     pub test: String,
+}
+
+pub mod model_inner {
+    use super::*;
+    #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
+    pub struct Test {
+        pub test: String,
+    }
 }
 
 #[chitin_model]
@@ -33,7 +41,7 @@ mod model {
         pub ty: UserType,
     }
     #[chitin_model_use]
-    pub use super::Test;
+    pub use super::{model_inner::Test, Test2};
 }
 
 pub use model::*;
