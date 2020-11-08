@@ -63,6 +63,13 @@ pub struct RootQuery {
 #[async_trait]
 impl RootQueryRouter for RootQuery {
     type UserQueryRouter = UserQuery;
+    async fn test(
+        &self,
+        _ctx: crate::Ctx,
+        test: crate::model::Test,
+    ) -> Result<crate::model::Test, String> {
+        Ok(test)
+    }
     async fn ask_articles(
         &self,
         _ctx: Ctx,

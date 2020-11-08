@@ -30,6 +30,8 @@ pub enum RootQuery {
     },
     #[chitin(request, response = "i32")]
     CreateUser { user: crate::model::User },
+    #[chitin(request, response = "crate::model::Test")]
+    Test { test: crate::model::Test },
     #[chitin(router)]
     User(UserQuery), // 注意：假如這裡打錯成 `User(i32)` 或其它不是 `ChitinCodegen` 的東西，會報出很難解的錯誤
 }

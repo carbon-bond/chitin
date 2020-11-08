@@ -1,8 +1,15 @@
 use chitin::*;
+use serde::{Deserialize, Serialize};
+use typescript_definitions::TypeScriptify;
+
+#[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
+pub struct Test {
+    pub test: String,
+}
 
 #[chitin_model]
 mod model {
-    use chitin::chitin_util;
+    use chitin::*;
     use chrono::{DateTime, Utc};
     use serde::{Deserialize, Serialize};
     use typescript_definitions::{TypeScriptify, TypeScriptifyTrait};
@@ -25,6 +32,8 @@ mod model {
         pub sentence: String,
         pub ty: UserType,
     }
+    #[chitin_model_use]
+    pub use super::Test;
 }
 
 pub use model::*;
