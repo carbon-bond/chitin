@@ -10,19 +10,16 @@ use syn::{parse_macro_input, Data, DeriveInput, Lit, Meta, NestedMeta, Type};
 
 #[derive(Default)]
 struct Args {
-    named: HashMap<String, String>,
+    named: HashMap<String, (String, usize)>,
     unnamed: Vec<String>,
 }
 
 impl Args {
-    pub fn to_request_vec(self) -> Vec<Request> {
-        let mut req: Vec<_> = self
-            .named
-            .into_iter()
-            .map(|(name, ty)| Request { name, ty })
-            .collect();
-        req.sort_by(|r1, r2| r1.name.cmp(&r2.name));
-        req
+    pub fn into_request_iter(self) -> impl Iterator<Item=Request> {
+        let mut req: Vec<_> = self.named.into_iter().collect();
+        req.sort_by(|(_, (_, pos1)), (_, (_, pos2))| pos1.cmp(pos2));
+        req.into_iter()
+            .map(|(name, (ty, _))| Request { ty, name })
     }
 }
 
@@ -52,7 +49,7 @@ impl EntryType {
                 ChitinEntry::Leaf {
                     name: name.to_owned(),
                     response_ty: ResponseTy(response.to_owned()),
-                    request: args.to_request_vec(),
+                    request: args.into_request_iter().collect(),
                 }
             }
             EntryType::Node => {
@@ -106,7 +103,7 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
                     }
                 }
             }
-            for field in variant.fields.iter() {
+            for (pos, field) in variant.fields.iter().enumerate() {
                 if let Type::Path(p) = &field.ty {
                     let ty = if let Some(ident) = p.path.get_ident() {
                         ident.to_string()
@@ -115,7 +112,7 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
                     };
                     if let Some(name) = field.ident.as_ref() {
                         let name = name.to_string();
-                        args.named.insert(name, ty);
+                        args.named.insert(name, (ty, pos));
                     } else {
                         args.unnamed.push(ty);
                     }

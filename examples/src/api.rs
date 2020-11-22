@@ -28,8 +28,8 @@ impl UserQueryRouter for UserQuery {
     async fn ask_user_articles(
         &self,
         _ctx: Ctx,
-        count: usize,
         user_id: i32,
+        count: usize,
     ) -> Result<Vec<crate::model::Article>, String> {
         let articles = crate::ARTICLES.lock().unwrap();
         Ok(articles
