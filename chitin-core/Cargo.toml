@@ -1,6 +1,6 @@
 [package]
 name = "chitin_core"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["why8ther <lturtsamuel@gmail.com>"]
 edition = "2018"
 

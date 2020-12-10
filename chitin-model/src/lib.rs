@@ -67,6 +67,7 @@ fn extract_use_ident(idents: &mut Vec<Ident>, tree: &UseTree) -> Result<(), ()> 
         UseTree::Path(path) => {
             extract_use_ident(idents, path.tree.as_ref())?;
         }
+        UseTree::Rename(rename) => idents.push(rename.rename.clone()),
         UseTree::Name(name) => idents.push(name.ident.clone()),
         UseTree::Group(group) => {
             for item in group.items.iter() {
