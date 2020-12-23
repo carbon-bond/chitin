@@ -1,6 +1,6 @@
 [package]
 name = "chitin_model"
-version = "0.2.5"
+version = "0.2.6"
 authors = ["MROS <yc1043@gmail.com>"]
 edition = "2018"
 

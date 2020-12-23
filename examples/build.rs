@@ -7,6 +7,11 @@ use query::RootQuery;
 use std::fs::File;
 use std::io::prelude::*;
 
+#[cfg(not(debug_assertions))]
+fn main() -> std::io::Result<()> {
+    Ok(())
+}
+#[cfg(debug_assertions)]
 fn main() -> std::io::Result<()> {
     let mut server_file = File::create("src/api_trait.rs")?;
     server_file.write_all(b"use async_trait::async_trait;\n")?;

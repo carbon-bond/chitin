@@ -39,6 +39,7 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let ident = &item_mod.ident;
     let attrs = &item_mod.attrs;
     let (_, ref content) = item_mod.content.as_ref().unwrap();
+    #[cfg(debug_assertions)]
     let new_mod = quote! {
         #(#attrs)* mod #ident {
             #(#content)*
@@ -51,6 +52,12 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 )*
                 ret
             }
+        }
+    };
+    #[cfg(not(debug_assertions))]
+    let new_mod = quote! {
+        #(#attrs)* mod #ident {
+            #(#content)*
         }
     };
     // println!("new_mod = {} $", new_mod.to_string());
