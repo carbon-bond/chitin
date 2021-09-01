@@ -29,3 +29,11 @@ TODO: 補個 protobuf 的例子
 ./examples/codegen.sh server
 ./examples/codegen.sh client
 ```
+
+## 源碼結構
+.
+├── chitin         # 導出下面三個模組的定義
+├── chitin-core    # 由 ChitinEntry 生成出 Rust 的 trait 以及 TypeScript 的虛類
+├── chitin-derive  # 由 Rust 寫的 API 定義解析出 ChitinEntry
+├── chitin-model   # 由 Rust 寫的結構／enum 生成 TypeScript 的對應型別
+└── examples       # 範例

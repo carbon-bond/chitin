@@ -2,6 +2,7 @@ mod api;
 mod api_trait;
 mod model;
 mod query;
+mod query2;
 
 use api_trait::*;
 use hyper::service::{make_service_fn, service_fn};

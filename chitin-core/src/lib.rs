@@ -119,6 +119,67 @@ pub enum ChitinEntry {
     },
 }
 
+#[derive(Debug)]
+pub struct Argument {
+    pub name: String,
+    pub ty: String,
+}
+
+impl ToTokens for Argument {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let name = &self.name;
+        let ty = &self.ty;
+        tokens.extend(quote! {
+            {
+                use chitin::Argument;
+                Argument {
+                    ty: #ty.to_owned(),
+                    name: #name.to_owned(),
+                }
+            }
+        });
+    }
+}
+
+#[derive(Debug)]
+pub struct Leaf {
+    pub name: String,
+    pub response_ty: String,
+    pub args: Vec<Argument>,
+}
+
+impl ToTokens for Leaf {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let name = &self.name;
+        let response_ty = &self.response_ty;
+        let args = &self.args;
+        tokens.extend(quote! {
+            {
+                use chitin::Leaf;
+                use chitin::Argument;
+                Leaf {
+                    response_ty: #response_ty.to_owned(),
+                    name: #name.to_owned(),
+                    args: vec![#(#args),*]
+                }
+            }
+        });
+    }
+}
+
+#[derive(Debug)]
+pub struct Router {
+    name: String,
+    // query_name: String,
+    children: Vec<ChitinEntry2>,
+}
+
+#[derive(Debug)]
+pub enum ChitinEntry2 {
+    Leaf(Leaf),
+    Router(Router),
+}
+
 impl ToTokens for ChitinEntry {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
