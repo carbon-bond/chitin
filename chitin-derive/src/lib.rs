@@ -1,8 +1,8 @@
 extern crate proc_macro;
 
-use chitin_core::{ChitinEntry, ChitinEntry2, FuncOrCode, Leaf, Request, ResponseTy};
+use chitin_core::{ChitinEntry, FuncOrCode, Leaf, Request, ResponseTy};
 use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, ToTokens};
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -67,11 +67,6 @@ impl EntryType {
     }
 }
 
-struct PrimitiveRouter {
-    name: String,
-    next_enum: String,
-}
-
 #[derive(Default)]
 struct Fields {
     // (變數名, 類型)
@@ -82,7 +77,7 @@ struct Fields {
 
 fn to_fields(syn_fields: &syn::Fields) -> Fields {
     let mut fields: Fields = Default::default();
-    for (pos, field) in syn_fields.iter().enumerate() {
+    for field in syn_fields.iter() {
         if let Type::Path(p) = &field.ty {
             let ty = if let Some(ident) = p.path.get_ident() {
                 ident.to_string()
@@ -98,6 +93,11 @@ fn to_fields(syn_fields: &syn::Fields) -> Fields {
         }
     }
     fields
+}
+
+struct PrimitiveRouter {
+    pub name: String,
+    pub next_enum: Ident,
 }
 
 #[proc_macro_derive(ChitinRouter, attributes(chitin))]
@@ -139,8 +139,8 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
                     assert!(fields.named.len() == 0, "router 類型僅需一個無名參數");
                     routers.push(PrimitiveRouter {
                         name: variant_name.to_string(),
-                        next_enum: fields.unnamed[0].clone(),
-                    })
+                        next_enum: Ident::new(&fields.unnamed[0], Span::call_site()),
+                    });
                 // 此 variant 是一個葉子
                 } else if node_type == "leaf" {
                     if let Some(second_meta) = metas.next() {
@@ -189,17 +189,29 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
         panic!("只有枚舉類型可以實作 ChitinCodegen")
     };
 
+    let names: Vec<&String> = routers.iter().map(|router| &router.name).collect();
+    let next_enums: Vec<&Ident> = routers.iter().map(|router| &router.next_enum).collect();
+
     let ident = ast.ident; // 枚舉名
     let expanded = quote! {
         #[automatically_derived]
         impl #ident {
-            fn get_children() -> Vec<ChitinEntry2> {
+            pub fn get_children() -> Vec<chitin::ChitinEntry2> {
                 let leaves = vec![#(#leaves),*];
-                let leaves: Vec<ChitinEntry2> = leaves
+                let mut children: Vec<ChitinEntry2> = leaves
                     .into_iter()
                     .map(|leaf| ChitinEntry2::Leaf(leaf))
                     .collect();
-                leaves
+                let mut routers: Vec<ChitinEntry2> = vec![#( chitin::Router{ name: #names.to_owned(), children: #next_enums::get_children() }.into()  ),*];
+                // for router in routers.iter() {
+                //     let next_enum = router.next_enum;
+                //     children.push(ChitinEntry2::Router{
+                //         name: router.name,
+                //         children: (#next_enum).get_children()
+                //     })
+                // }
+                children.append(&mut routers);
+                children
             }
         }
     };

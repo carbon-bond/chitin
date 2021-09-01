@@ -169,9 +169,15 @@ impl ToTokens for Leaf {
 
 #[derive(Debug)]
 pub struct Router {
-    name: String,
+    pub name: String,
     // query_name: String,
-    children: Vec<ChitinEntry2>,
+    pub children: Vec<ChitinEntry2>,
+}
+
+impl Into<ChitinEntry2> for Router {
+    fn into(self) -> ChitinEntry2 {
+        ChitinEntry2::Router(self)
+    }
 }
 
 #[derive(Debug)]
