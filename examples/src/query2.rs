@@ -1,4 +1,3 @@
-// #![allow(dead_code)]
 use chitin::*;
 use serde::{Deserialize, Serialize};
 

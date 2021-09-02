@@ -193,25 +193,22 @@ pub fn derive_router(input: TokenStream) -> TokenStream {
     let next_enums: Vec<&Ident> = routers.iter().map(|router| &router.next_enum).collect();
 
     let ident = ast.ident; // 枚舉名
+    let enum_name = ident.clone().to_string(); // 枚舉名
     let expanded = quote! {
         #[automatically_derived]
         impl #ident {
-            pub fn get_children() -> Vec<chitin::ChitinEntry2> {
+            pub fn get_entry(variant_name: Option<String>) -> chitin::ChitinEntry2 {
                 let leaves = vec![#(#leaves),*];
-                let mut children: Vec<ChitinEntry2> = leaves
-                    .into_iter()
-                    .map(|leaf| ChitinEntry2::Leaf(leaf))
-                    .collect();
-                let mut routers: Vec<ChitinEntry2> = vec![#( chitin::Router{ name: #names.to_owned(), children: #next_enums::get_children() }.into()  ),*];
-                // for router in routers.iter() {
-                //     let next_enum = router.next_enum;
-                //     children.push(ChitinEntry2::Router{
-                //         name: router.name,
-                //         children: (#next_enum).get_children()
-                //     })
-                // }
-                children.append(&mut routers);
-                children
+                let routers = vec![#( #next_enums::get_entry(Some(#names.to_owned())) ),*];
+                chitin::ChitinEntry2 {
+                    name: #enum_name.to_owned(),
+                    variant_name,
+                    routers,
+                    leaves,
+                }
+            }
+            pub fn get_root_entry() -> chitin::ChitinEntry2 {
+                Self::get_entry(None)
             }
         }
     };

@@ -59,8 +59,7 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("{:#?}", query2::UserDetailQuery::get_children());
-    println!("{:#?}", query2::UserQuery::get_children());
+    println!("{:#?}", query2::RootQuery::get_root_entry());
     let addr = ([127, 0, 0, 1], 9090).into();
     let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(echo)) });
     let server = Server::bind(&addr).serve(service);

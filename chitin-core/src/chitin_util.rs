@@ -1,7 +1,6 @@
-use crate::Request;
 use regex::Regex;
 
-pub fn gen_enum_json(prev: &[String], params: &[Request]) -> String {
+pub fn gen_enum_json(prev: &[String], params: &[crate::Argument]) -> String {
     if let Some(cur) = prev.first() {
         let inner = gen_enum_json(&prev[1..prev.len()], params);
         format!("{{ \"{}\": {} }}", cur, inner)

@@ -1,3 +1,5 @@
+use std::{fmt::write, io::Write};
+
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
@@ -168,22 +170,173 @@ impl ToTokens for Leaf {
 }
 
 #[derive(Debug)]
-pub struct Router {
+pub struct ChitinEntry2 {
     pub name: String,
-    // query_name: String,
-    pub children: Vec<ChitinEntry2>,
+    pub variant_name: Option<String>,
+    pub leaves: Vec<Leaf>,
+    pub routers: Vec<ChitinEntry2>,
 }
 
-impl Into<ChitinEntry2> for Router {
-    fn into(self) -> ChitinEntry2 {
-        ChitinEntry2::Router(self)
+pub enum Language {
+    Rust,
+    TypeScript,
+}
+
+pub enum Side {
+    Server { context: &'static str },
+    Client,
+}
+
+pub struct CodegenOption2 {
+    pub side: Side,
+    pub language: Language,
+    pub error: &'static str,
+}
+
+impl CodegenOption2 {
+    pub fn prelude(&self) -> String {
+        match self {
+            CodegenOption2 {
+                side: Side::Client,
+                language: Language::TypeScript,
+                ..
+            } => {
+                let mut code = format!("export type Option<T> = T | undefined | null;\n");
+                code.push_str(
+                    "export type Result<T, E> = {
+    'Ok': T
+} | {
+    'Err': E
+};\n",
+                );
+                code.push_str("type Fetcher = (query: Object) => Promise<string>;\n");
+                code
+            }
+            _ => {
+                unimplemented!()
+            }
+        }
+    }
+    pub fn gen_response_ty(&self, response_ty: &String) -> String {
+        match self {
+            CodegenOption2 {
+                side: Side::Client,
+                language: Language::TypeScript,
+                error,
+            } => {
+                let primitive = format!("Result<{}, {}>", response_ty, error);
+                let ts_type = chitin_util::to_typescript_type(&primitive);
+                ts_type
+            }
+            _ => {
+                unimplemented!()
+            }
+        }
+    }
+    pub fn gen_args(&self, args: &Vec<Argument>) -> String {
+        args.iter()
+            .map(|req| {
+                let ty = chitin_util::to_typescript_type(&req.ty);
+                format!("{}: {}", req.name, ty)
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
     }
 }
 
-#[derive(Debug)]
-pub enum ChitinEntry2 {
-    Leaf(Leaf),
-    Router(Router),
+impl Leaf {
+    pub fn codegen<T: std::io::Write>(
+        &self,
+        option: &CodegenOption2,
+        path: &mut Vec<String>,
+        stream: &mut T,
+    ) -> std::io::Result<()> {
+        write!(
+            stream,
+            "    async {}({}): Promise<{}> {{\n",
+            self.name.to_camel_case(),
+            option.gen_args(&self.args),
+            option.gen_response_ty(&self.response_ty)
+        )?;
+        path.push(self.name.clone());
+        write!(
+            stream,
+            "        return JSON.parse(await this.fetchResult({}));\n",
+            chitin_util::gen_enum_json(path, &self.args)
+        )?;
+        write!(stream, "    }}\n")?;
+        path.pop();
+        Ok(())
+    }
+}
+
+impl ChitinEntry2 {
+    pub fn root_codegen<T: std::io::Write>(
+        &self,
+        option: &CodegenOption2,
+        stream: &mut T,
+    ) -> std::io::Result<()> {
+        self.codegen(option, &mut vec![], stream)
+    }
+    pub fn codegen<T: std::io::Write>(
+        &self,
+        option: &CodegenOption2,
+        path: &mut Vec<String>,
+        stream: &mut T,
+    ) -> std::io::Result<()> {
+        match option {
+            CodegenOption2 {
+                side: Side::Server { context },
+                language: Language::Rust,
+                error,
+            } => {
+                unimplemented!()
+            }
+            CodegenOption2 {
+                side: Side::Client,
+                language: Language::TypeScript,
+                error,
+            } => {
+                write!(stream, "class {} {{\n", self.name)?;
+                write!(stream, "    fetchResult: Fetcher;\n")?;
+                for router in &self.routers {
+                    write!(
+                        stream,
+                        "    {}: {}\n",
+                        router.name.to_camel_case(),
+                        router.name
+                    )?;
+                }
+                write!(stream, "    constructor(fetcher: Fetcher){{\n")?;
+                write!(stream, "        this.fetchResult = fetcher\n")?;
+                for router in &self.routers {
+                    write!(
+                        stream,
+                        "        this.{} = new {}(fetcher)\n",
+                        router.name.to_camel_case(),
+                        router.name
+                    )?;
+                }
+                write!(stream, "    }}\n")?;
+
+                for leaf in &self.leaves {
+                    leaf.codegen(option, path, stream)?;
+                }
+                write!(stream, "}}\n\n")?;
+
+                for router in &self.routers {
+                    path.push(router.variant_name.as_ref().unwrap().clone());
+                    router.codegen(option, path, stream)?;
+                    path.pop();
+                }
+
+                Ok(())
+            }
+            _ => {
+                unimplemented!()
+            }
+        }
+    }
 }
 
 impl ToTokens for ChitinEntry {
@@ -230,34 +383,6 @@ fn client_codegen_inner(
     prev: &mut Vec<String>,
 ) -> String {
     let mut code = "".to_owned();
-    for entry in entries.iter() {
-        match entry {
-            ChitinEntry::Leaf {
-                name,
-                response_ty,
-                request,
-            } => {
-                code.push_str(&format!(
-                    "    async {}({}): Promise<{}> {{\n",
-                    get_query_func_name(name),
-                    gen_arg_string(request, true, opt),
-                    chitin_util::to_typescript_type(&response_ty.as_result(&opt))
-                ));
-                prev.push(name.clone());
-                code.push_str(&format!(
-                    "        return JSON.parse(await this.fetchResult({}));\n",
-                    chitin_util::gen_enum_json(prev, request)
-                ));
-                prev.pop();
-                code.push_str("    }\n");
-            }
-            ChitinEntry::Node { name, codegen, .. } => {
-                prev.push(name.clone());
-                code.push_str(&codegen.gen_string(&opt, prev));
-                prev.pop();
-            }
-        }
-    }
     code
 }
 
