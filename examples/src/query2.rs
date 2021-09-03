@@ -1,13 +1,13 @@
 use chitin::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(ChitinRouter)]
+#[derive(ChitinRouter, Deserialize, Serialize, Debug)]
 pub enum UserDetailQuery {
     #[chitin(leaf, response = "Option<crate::model::User>")]
     AskUserDetail { user_id: i32 },
 }
 
-#[derive(ChitinRouter)]
+#[derive(ChitinRouter, Deserialize, Serialize, Debug)]
 pub enum UserQuery {
     #[chitin(leaf, response = "Vec<crate::model::Article>")]
     AskUserArticles { user_id: i32, count: usize },
@@ -19,7 +19,7 @@ pub enum UserQuery {
     UserDetail(UserDetailQuery),
 }
 
-#[derive(ChitinRouter)]
+#[derive(ChitinRouter, Deserialize, Serialize, Debug)]
 pub enum RootQuery {
     #[chitin(leaf, response = "Vec<crate::model::Article>")]
     AskArticles { count: usize },

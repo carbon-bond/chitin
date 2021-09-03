@@ -228,19 +228,55 @@ impl CodegenOption2 {
                 let ts_type = chitin_util::to_typescript_type(&primitive);
                 ts_type
             }
+            CodegenOption2 {
+                side: Side::Server { .. },
+                language: Language::Rust,
+                error,
+            } => {
+                format!("Result<{}, {}>", response_ty, error)
+            }
             _ => {
                 unimplemented!()
             }
         }
     }
-    pub fn gen_args(&self, args: &Vec<Argument>) -> String {
-        args.iter()
-            .map(|req| {
-                let ty = chitin_util::to_typescript_type(&req.ty);
-                format!("{}: {}", req.name, ty)
-            })
-            .collect::<Vec<_>>()
-            .join(", ")
+    pub fn gen_args(&self, args: &Vec<Argument>, has_type: bool) -> String {
+        match self {
+            CodegenOption2 {
+                side: Side::Client,
+                language: Language::TypeScript,
+                ..
+            } => args
+                .iter()
+                .map(|req| {
+                    if has_type {
+                        let ty = chitin_util::to_typescript_type(&req.ty);
+                        format!("{}: {}", req.name, ty)
+                    } else {
+                        req.name.clone()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(", "),
+            CodegenOption2 {
+                side: Side::Server { .. },
+                language: Language::Rust,
+                ..
+            } => args
+                .iter()
+                .map(|req| {
+                    if has_type {
+                        format!("{}: {}", req.name, req.ty)
+                    } else {
+                        req.name.clone()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(", "),
+            _ => {
+                unimplemented!()
+            }
+        }
     }
 }
 
@@ -251,20 +287,45 @@ impl Leaf {
         path: &mut Vec<String>,
         stream: &mut T,
     ) -> std::io::Result<()> {
-        write!(
-            stream,
-            "    async {}({}): Promise<{}> {{\n",
-            self.name.to_camel_case(),
-            option.gen_args(&self.args),
-            option.gen_response_ty(&self.response_ty)
-        )?;
         path.push(self.name.clone());
-        write!(
-            stream,
-            "        return JSON.parse(await this.fetchResult({}));\n",
-            chitin_util::gen_enum_json(path, &self.args)
-        )?;
-        write!(stream, "    }}\n")?;
+        match option {
+            CodegenOption2 {
+                side: Side::Client,
+                language: Language::TypeScript,
+                ..
+            } => {
+                write!(
+                    stream,
+                    "    async {}({}): Promise<{}> {{\n",
+                    self.name.to_camel_case(),
+                    option.gen_args(&self.args, true),
+                    option.gen_response_ty(&self.response_ty)
+                )?;
+                write!(
+                    stream,
+                    "        return JSON.parse(await this.fetchResult({}));\n",
+                    chitin_util::gen_enum_json(path, &self.args)
+                )?;
+                write!(stream, "    }}\n")?;
+            }
+            CodegenOption2 {
+                side: Side::Server { context },
+                language: Language::Rust,
+                ..
+            } => {
+                write!(
+                    stream,
+                    "    async fn {}(&self, context: {}, {}) -> {};\n",
+                    self.name.to_snake_case(),
+                    context,
+                    option.gen_args(&self.args, true),
+                    option.gen_response_ty(&self.response_ty)
+                )?;
+            }
+            _ => {
+                unimplemented!()
+            }
+        }
         path.pop();
         Ok(())
     }
@@ -285,13 +346,6 @@ impl ChitinEntry2 {
         stream: &mut T,
     ) -> std::io::Result<()> {
         match option {
-            CodegenOption2 {
-                side: Side::Server { context },
-                language: Language::Rust,
-                error,
-            } => {
-                unimplemented!()
-            }
             CodegenOption2 {
                 side: Side::Client,
                 language: Language::TypeScript,
@@ -329,13 +383,88 @@ impl ChitinEntry2 {
                     router.codegen(option, path, stream)?;
                     path.pop();
                 }
-
-                Ok(())
+            }
+            CodegenOption2 {
+                side: Side::Server { context },
+                language: Language::Rust,
+                error,
+            } => {
+                for router in &self.routers {
+                    path.push(router.variant_name.as_ref().unwrap().clone());
+                    router.codegen(option, path, stream)?;
+                    path.pop();
+                }
+                write!(stream, "#[async_trait]\npub trait {}Router {{\n", self.name)?;
+                for router in &self.routers {
+                    write!(
+                        stream,
+                        "    type {}Router: {}Router + Sync;\n",
+                        router.name, router.name
+                    )?;
+                }
+                for leaf in &self.leaves {
+                    leaf.codegen(option, path, stream)?;
+                }
+                for router in &self.routers {
+                    write!(
+                        stream,
+                        "   fn {}_router(&self) -> &Self::{}Router;\n",
+                        router.variant_name.as_ref().unwrap().to_snake_case(),
+                        router.name,
+                    )?;
+                }
+                write!(
+                    stream,
+                    "    async fn handle(&self, context: {}, query: {}) -> Result<(String, Option<{}>), Error> {{\n",
+                    context,
+                    self.name,
+                    error,
+                )?;
+                write!(stream, "        match query {{\n")?;
+                for leaf in &self.leaves {
+                    write!(
+                        stream,
+                        "             {}::{} {{ {} }} => {{\n",
+                        self.name,
+                        leaf.name,
+                        option.gen_args(&leaf.args, false)
+                    )?;
+                    write!(
+                        stream,
+                        "                 let resp = self.{}(context, {}).await;\n",
+                        &leaf.name.to_snake_case(),
+                        option.gen_args(&leaf.args, false)
+                    )?;
+                    write!(
+                        stream,
+                        "                 let s = serde_json::to_string(&resp)?;\n"
+                    )?;
+                    write!(stream, "                 Ok((s, resp.err()))\n")?;
+                    write!(stream, "            }}\n")?;
+                }
+                for router in &self.routers {
+                    write!(
+                        stream,
+                        "             {}::{}(query) => {{\n",
+                        self.name,
+                        router.variant_name.as_ref().unwrap()
+                    )?;
+                    write!(
+                        stream,
+                        "                 self.{}_router().handle(context, query).await\n",
+                        router.variant_name.as_ref().unwrap().to_camel_case()
+                    )?;
+                    write!(stream, "            }}\n")?;
+                }
+                write!(stream, "        }}\n")?;
+                write!(stream, "    }}\n")?;
+                write!(stream, "}}\n")?;
             }
             _ => {
                 unimplemented!()
             }
         }
+        Ok(())
     }
 }
 
