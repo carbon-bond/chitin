@@ -209,7 +209,7 @@ impl CodegenOption2 {
     'Err': E
 };\n",
                 );
-                code.push_str("type Fetcher = (query: Object) => Promise<string>;\n");
+                code.push_str("export type Fetcher = (query: Object) => Promise<string>;\n");
                 code
             }
             _ => {
@@ -297,7 +297,7 @@ impl ChitinEntry2 {
                 language: Language::TypeScript,
                 error,
             } => {
-                write!(stream, "class {} {{\n", self.name)?;
+                write!(stream, "export class {} {{\n", self.name)?;
                 write!(stream, "    fetchResult: Fetcher;\n")?;
                 for router in &self.routers {
                     write!(

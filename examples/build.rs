@@ -1,8 +1,10 @@
 #[path = "src/model.rs"]
 mod model;
+#[path = "src/query.rs"]
+mod query;
 #[path = "src/query2.rs"]
 mod query2;
-use chitin::CodegenOption2;
+use chitin::{ChitinCodegen, CodegenOption, CodegenOption2};
 use chitin::{Language, Side};
 use query2::RootQuery;
 use std::fs::File;
@@ -14,25 +16,25 @@ fn main() -> std::io::Result<()> {
 }
 #[cfg(debug_assertions)]
 fn main() -> std::io::Result<()> {
-    // let mut server_file = File::create("src/api_trait.rs")?;
-    // server_file.write_all(b"use async_trait::async_trait;\n")?;
-    // server_file.write_all(b"use crate::query::*;\n")?;
-    // server_file.write_all(b"use serde_json::error::Error;\n")?;
-    // server_file.write_all(
-    //     RootQuery::codegen(&CodegenOption::Server {
-    //         error: "String",
-    //         context: "crate::Ctx",
-    //     })
-    //     .as_bytes(),
-    // )?;
+    let mut server_file = File::create("src/api_trait.rs")?;
+    server_file.write_all(b"use async_trait::async_trait;\n")?;
+    server_file.write_all(b"use crate::query::*;\n")?;
+    server_file.write_all(b"use serde_json::error::Error;\n")?;
+    server_file.write_all(
+        query::RootQuery::codegen(&CodegenOption::Server {
+            error: "String",
+            context: "crate::Ctx",
+        })
+        .as_bytes(),
+    )?;
 
     let client_option = CodegenOption2 {
         side: Side::Client,
         language: Language::TypeScript,
         error: "String",
     };
-    let mut client_file = File::create("client/api_trait2.ts")?;
-    client_file.write_all(client_option.prelude().as_bytes());
+    let mut client_file = File::create("client/api_trait.ts")?;
+    client_file.write_all(client_option.prelude().as_bytes())?;
     client_file.write_all(model::gen_typescript().as_bytes())?;
     RootQuery::get_root_entry().root_codegen(&client_option, &mut client_file)?;
     Ok(())

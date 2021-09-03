@@ -1,10 +1,8 @@
 import * as _vorpal from 'vorpal';
-import * as api from './api';
+import { api_fetcher } from './api';
 import { UserType } from './api_trait';
 
 const vorpal = new _vorpal();
-
-const api_fetcher = new api.ApiFetcher();
 
 function report(promise: Promise<any>): Promise<void> {
     return promise
@@ -25,13 +23,13 @@ vorpal
 vorpal
     .command('user_articles <user_id> <count>', '看 id 是 <user_id> 的使用者有哪些文章')
     .action(function (args) {
-        return report.bind(this)(api_fetcher.askUserArticles(args.count, args.user_id));
+        return report.bind(this)(api_fetcher.userQuery.askUserArticles(args.count, args.user_id));
     });
 
 vorpal
     .command('user_detail <user_id>', '從 id 查使用者訊息')
     .action(function (args) {
-        return report.bind(this)(api_fetcher.askUserDetail(args.user_id));
+        return report.bind(this)(api_fetcher.userQuery.userDetailQuery.askUserDetail(args.user_id));
     });
 
 vorpal
@@ -58,12 +56,12 @@ vorpal
 vorpal
     .command('whoami', '查登入狀態')
     .action(function (args) {
-        return report.bind(this)(api_fetcher.whoAmI());
+        return report.bind(this)(api_fetcher.userQuery.whoAmI());
     });
 vorpal
     .command('login <user_id>', '登入')
     .action(function (args) {
-        return report.bind(this)(api_fetcher.login(args.user_id));
+        return report.bind(this)(api_fetcher.userQuery.login(args.user_id));
     });
 
 vorpal
