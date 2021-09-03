@@ -1,13 +1,13 @@
 mod api;
 mod api_trait;
 mod model;
-mod query2;
+mod query;
 
 use api_trait::*;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use lazy_static::lazy_static;
-use query2::*;
+use query::*;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -58,7 +58,7 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("{:#?}", query2::RootQuery::get_root_entry());
+    println!("{:#?}", query::RootQuery::get_root_entry());
     let addr = ([127, 0, 0, 1], 9090).into();
     let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(echo)) });
     let server = Server::bind(&addr).serve(service);

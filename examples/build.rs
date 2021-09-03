@@ -1,10 +1,10 @@
 #[path = "src/model.rs"]
 mod model;
-#[path = "src/query2.rs"]
-mod query2;
-use chitin::CodegenOption2;
+#[path = "src/query.rs"]
+mod query;
+use chitin::CodegenOption;
 use chitin::{Language, Side};
-use query2::RootQuery;
+use query::RootQuery;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -16,7 +16,7 @@ fn main() -> std::io::Result<()> {
 fn main() -> std::io::Result<()> {
     let chitin_entry = RootQuery::get_root_entry();
 
-    let server_option = CodegenOption2 {
+    let server_option = CodegenOption {
         side: Side::Server {
             context: "crate::Ctx",
         },
@@ -25,11 +25,11 @@ fn main() -> std::io::Result<()> {
     };
     let mut server_file = File::create("src/api_trait.rs")?;
     server_file.write_all(b"use async_trait::async_trait;\n")?;
-    server_file.write_all(b"use crate::query2::*;\n")?;
+    server_file.write_all(b"use crate::query::*;\n")?;
     server_file.write_all(b"use serde_json::error::Error;\n")?;
     chitin_entry.root_codegen(&server_option, &mut server_file)?;
 
-    let client_option = CodegenOption2 {
+    let client_option = CodegenOption {
         side: Side::Client,
         language: Language::TypeScript,
         error: "String",
