@@ -1,14 +1,13 @@
 mod api;
 mod api_trait;
 mod model;
-mod query;
 mod query2;
 
 use api_trait::*;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use lazy_static::lazy_static;
-use query::*;
+use query2::*;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 

@@ -452,7 +452,7 @@ impl ChitinEntry2 {
                     write!(
                         stream,
                         "                 self.{}_router().handle(context, query).await\n",
-                        router.variant_name.as_ref().unwrap().to_camel_case()
+                        router.variant_name.as_ref().unwrap().to_snake_case()
                     )?;
                     write!(stream, "            }}\n")?;
                 }

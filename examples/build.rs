@@ -1,10 +1,8 @@
 #[path = "src/model.rs"]
 mod model;
-#[path = "src/query.rs"]
-mod query;
 #[path = "src/query2.rs"]
 mod query2;
-use chitin::{ChitinCodegen, CodegenOption, CodegenOption2};
+use chitin::CodegenOption2;
 use chitin::{Language, Side};
 use query2::RootQuery;
 use std::fs::File;
@@ -16,18 +14,6 @@ fn main() -> std::io::Result<()> {
 }
 #[cfg(debug_assertions)]
 fn main() -> std::io::Result<()> {
-    let mut server_file = File::create("src/api_trait.rs")?;
-    server_file.write_all(b"use async_trait::async_trait;\n")?;
-    server_file.write_all(b"use crate::query::*;\n")?;
-    server_file.write_all(b"use serde_json::error::Error;\n")?;
-    server_file.write_all(
-        query::RootQuery::codegen(&CodegenOption::Server {
-            error: "String",
-            context: "crate::Ctx",
-        })
-        .as_bytes(),
-    )?;
-
     let chitin_entry = RootQuery::get_root_entry();
 
     let server_option = CodegenOption2 {
@@ -37,11 +23,11 @@ fn main() -> std::io::Result<()> {
         language: Language::Rust,
         error: "String",
     };
-    let mut server_file2 = File::create("src/api_trait2.rs")?;
-    server_file2.write_all(b"use async_trait::async_trait;\n")?;
-    server_file2.write_all(b"use crate::query2::*;\n")?;
-    server_file2.write_all(b"use serde_json::error::Error;\n")?;
-    chitin_entry.root_codegen(&server_option, &mut server_file2)?;
+    let mut server_file = File::create("src/api_trait.rs")?;
+    server_file.write_all(b"use async_trait::async_trait;\n")?;
+    server_file.write_all(b"use crate::query2::*;\n")?;
+    server_file.write_all(b"use serde_json::error::Error;\n")?;
+    chitin_entry.root_codegen(&server_option, &mut server_file)?;
 
     let client_option = CodegenOption2 {
         side: Side::Client,
