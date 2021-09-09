@@ -95,6 +95,15 @@ impl CodegenOption {
                 code.push_str("export type Fetcher = (query: Object) => Promise<string>;\n");
                 code
             }
+            CodegenOption {
+                side: Side::Server { .. },
+                language: Language::Rust,
+                ..
+            } => {
+                let mut code = format!("use async_trait::async_trait;\n");
+                code.push_str("use serde_json::error::Error;\n");
+                code
+            }
             _ => {
                 unimplemented!()
             }

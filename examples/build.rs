@@ -24,9 +24,8 @@ fn main() -> std::io::Result<()> {
         error: "String",
     };
     let mut server_file = File::create("src/api_trait.rs")?;
-    server_file.write_all(b"use async_trait::async_trait;\n")?;
     server_file.write_all(b"use crate::query::*;\n")?;
-    server_file.write_all(b"use serde_json::error::Error;\n")?;
+    server_file.write_all(server_option.prelude().as_bytes())?;
     chitin_entry.root_codegen(&server_option, &mut server_file)?;
 
     let client_option = CodegenOption {
