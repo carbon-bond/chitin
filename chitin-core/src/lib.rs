@@ -84,7 +84,7 @@ impl CodegenOption {
                 language: Language::TypeScript,
                 ..
             } => {
-                let mut code = format!("export type Option<T> = T | undefined | null;\n");
+                let mut code = format!("export type Option<T> = T | null;\n");
                 code.push_str(
                     "export type Result<T, E> = {
     'Ok': T
