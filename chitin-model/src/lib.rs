@@ -38,10 +38,11 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     }
     let ident = &item_mod.ident;
     let attrs = &item_mod.attrs;
+    let vis = &item_mod.vis;
     let (_, ref content) = item_mod.content.as_ref().unwrap();
     #[cfg(debug_assertions)]
     let new_mod = quote! {
-        #(#attrs)* mod #ident {
+        #(#attrs)* #vis mod #ident {
             #(#content)*
             pub fn gen_typescript() -> String {
                 let mut ret = String::new();
