@@ -65,5 +65,17 @@ vorpal
     });
 
 vorpal
+    .command('test_embeded1 <s>', '測試巢狀模型')
+    .action(function (args) {
+        return report.bind(this)(api_fetcher.embeded1Test({s: args.s}));
+    });
+
+vorpal
+    .command('test_embeded2 <s>', '測試巢狀模型')
+    .action(function (args) {
+        return report.bind(this)(api_fetcher.embeded2Test({s: args.s}));
+    });
+
+vorpal
     .delimiter('$')
     .show();

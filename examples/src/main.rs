@@ -1,6 +1,6 @@
 mod api;
 mod api_trait;
-mod model;
+mod model_root;
 mod query;
 
 use api_trait::*;
@@ -49,8 +49,8 @@ async fn echo(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
 }
 
 lazy_static! {
-    pub static ref USERS: Mutex<HashMap<i32, model::User>> = Mutex::new(HashMap::new());
-    pub static ref ARTICLES: Mutex<Vec<model::Article>> = Mutex::new(Vec::new());
+    pub static ref USERS: Mutex<HashMap<i32, model_root::User>> = Mutex::new(HashMap::new());
+    pub static ref ARTICLES: Mutex<Vec<model_root::Article>> = Mutex::new(Vec::new());
     pub static ref CTX: Ctx = Ctx {
         user_id: Arc::new(Mutex::new(None))
     };

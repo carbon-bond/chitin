@@ -11,7 +11,7 @@ impl UserDetailQueryRouter for UserDetail {
         &self,
         _ctx: Ctx,
         user_id: i32,
-    ) -> Result<Option<crate::model::User>, String> {
+    ) -> Result<Option<crate::model_root::User>, String> {
         let users = crate::USERS.lock().unwrap();
         Ok(users.get(&user_id).map(|u| u.clone()))
     }
@@ -30,7 +30,7 @@ impl UserQueryRouter for UserQuery {
         _ctx: Ctx,
         user_id: i32,
         count: usize,
-    ) -> Result<Vec<crate::model::Article>, String> {
+    ) -> Result<Vec<crate::model_root::Article>, String> {
         let articles = crate::ARTICLES.lock().unwrap();
         Ok(articles
             .iter()
@@ -66,22 +66,36 @@ impl RootQueryRouter for RootQuery {
     async fn test(
         &self,
         _ctx: crate::Ctx,
-        test: crate::model::Test,
-    ) -> Result<crate::model::Test, String> {
+        test: crate::model_root::Test,
+    ) -> Result<crate::model_root::Test, String> {
+        Ok(test)
+    }
+    async fn embeded_1_test(
+        &self,
+        _ctx: crate::Ctx,
+        test: crate::model_root::embeded_1::Embeded1Test,
+    ) -> Result<crate::model_root::embeded_1::Embeded1Test, String> {
+        Ok(test)
+    }
+    async fn embeded_2_test(
+        &self,
+        _ctx: crate::Ctx,
+        test: crate::model_root::embeded_1::embeded_2::Embeded2Test,
+    ) -> Result<crate::model_root::embeded_1::embeded_2::Embeded2Test, String> {
         Ok(test)
     }
     async fn ask_articles(
         &self,
         _ctx: Ctx,
         count: usize,
-    ) -> Result<Vec<crate::model::Article>, String> {
+    ) -> Result<Vec<crate::model_root::Article>, String> {
         let articles = crate::ARTICLES.lock().unwrap();
         Ok(articles.iter().take(count).cloned().collect())
     }
     async fn post_article(
         &self,
         _ctx: Ctx,
-        article: Option<crate::model::Article>,
+        article: Option<crate::model_root::Article>,
     ) -> Result<(), String> {
         let mut articles = crate::ARTICLES.lock().unwrap();
         if let Some(mut article) = article {
@@ -90,7 +104,7 @@ impl RootQueryRouter for RootQuery {
         }
         Ok(())
     }
-    async fn create_user(&self, _ctx: Ctx, user: crate::model::User) -> Result<i32, String> {
+    async fn create_user(&self, _ctx: Ctx, user: crate::model_root::User) -> Result<i32, String> {
         let mut users = crate::USERS.lock().unwrap();
         let id = users.len() as i32;
         users.insert(id, user);

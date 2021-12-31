@@ -1,5 +1,5 @@
-#[path = "src/model.rs"]
-mod model;
+#[path = "src/model_root.rs"]
+mod model_root;
 #[path = "src/query.rs"]
 mod query;
 use chitin::CodegenOption;
@@ -35,7 +35,7 @@ fn main() -> std::io::Result<()> {
     };
     let mut client_file = File::create("client/api_trait.ts")?;
     client_file.write_all(client_option.prelude().as_bytes())?;
-    client_file.write_all(model::gen_typescript().as_bytes())?;
+    client_file.write_all(model_root::gen_typescript().as_bytes())?;
     chitin_entry.root_codegen(&client_option, &mut client_file)?;
     Ok(())
 }

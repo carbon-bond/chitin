@@ -4,19 +4,19 @@ use typescript_definitions::TypeScriptify;
 
 #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
 pub struct Test2 {
-    pub test: String,
+    pub s: String,
 }
 
 pub mod model_inner {
     use super::*;
     #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
     pub struct Test {
-        pub test: String,
+        pub s: String,
     }
 }
 
 #[chitin_model]
-mod model {
+mod model_root {
     use chitin::*;
     use chrono::{DateTime, Utc};
     use serde::{Deserialize, Serialize};
@@ -34,6 +34,23 @@ mod model {
         Nobody,
     }
 
+    #[chitin_model]
+    pub mod embeded_1 {
+        use super::*;
+        #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
+        pub struct Embeded1Test {
+            pub s: String,
+        }
+        #[chitin_model]
+        pub mod embeded_2 {
+            use super::*;
+            #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
+            pub struct Embeded2Test {
+                pub s: String,
+            }
+        }
+    }
+
     #[derive(Serialize, Deserialize, TypeScriptify, Clone, Debug)]
     pub struct User {
         pub name: String,
@@ -44,4 +61,4 @@ mod model {
     pub use super::{model_inner::Test, Test2};
 }
 
-pub use model::*;
+pub use model_root::*;
