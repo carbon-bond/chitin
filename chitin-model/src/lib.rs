@@ -69,7 +69,7 @@ pub fn chitin_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
     #[cfg(not(debug_assertions))]
     let new_mod = quote! {
-        #(#attrs)* mod #ident {
+        #(#attrs)* #vis mod #ident {
             #(#content)*
         }
     };
